@@ -3,10 +3,21 @@ import os
 import requests
 import io
 import time
+import logging
 from database import init_db
 from db_service import DatabaseService
 
+# Configure logging
+logging.basicConfig(
+    level=logging.WARNING,  # Only show warnings and errors
+    format='%(levelname)s: %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 app = Flask(__name__)
+# Disable Flask's default request logging
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
 # TMDB API configuration
 TMDB_ACCESS_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2YjUyNzU0MWNmODJlNjdhMmJhOGRmZTFmYjZiMDkwYyIsIm5iZiI6MTc1OTA3NDM4Mi44MDMsInN1YiI6IjY4ZDk1ODRlYWQzMTdmMmI2MWJiMDkxYSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.HnNxWDnTZIwhVWbXH8gpVfY1n6v0pse5z2A-KUSyI5I'
@@ -124,9 +135,7 @@ def index():
                              movie_page=movie_page, series_page=series_page, 
                              backdrop_urls=backdrop_urls)
     except Exception as e:
-        print(f"ERROR in index: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f" in index: {e}")
         return f"Error accessing data: {e}", 500
 
 @app.route('/load_more_movies/<int:page>')
@@ -191,9 +200,7 @@ def watch_movie(imdb_id):
                              imdb_id=imdb_id,
                              tmdb_id=tmdb_id)
     except Exception as e:
-        print(f"ERROR in watch_movie: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f" in watch_movie: {e}")
         return f"Error: {e}", 500
 
 @app.route('/watch/series/<imdb_id>')
@@ -236,9 +243,7 @@ def watch_series(imdb_id):
                              imdb_id=imdb_id,
                              tmdb_id=tmdb_id)
     except Exception as e:
-        print(f"ERROR in watch_series: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f" in watch_series: {e}")
         return f"Error: {e}", 500
 
 @app.route('/series/<imdb_id>')
@@ -301,9 +306,7 @@ def series_details(imdb_id):
         
         return render_template('series_details.html', series=series_dict, imdb_id=imdb_id)
     except Exception as e:
-        print(f"ERROR in series_details: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f" in series_details: {e}")
         return f"Error: {e}", 500
 
 @app.route('/series/<imdb_id>/season/<int:season_number>')
@@ -351,9 +354,7 @@ def season_episodes(imdb_id, season_number):
                                  imdb_id=imdb_id,
                                  tmdb_id=tmdb_id)
     except Exception as e:
-        print(f"ERROR in season_episodes: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f" in season_episodes: {e}")
         return f"Error: {e}", 500
 
 @app.route('/watch/series/<imdb_id>/season/<int:season_number>/episode/<int:episode_number>')
@@ -399,9 +400,7 @@ def watch_episode(imdb_id, season_number, episode_number):
                              season=season_number,
                              episode=episode_number)
     except Exception as e:
-        print(f"ERROR in watch_episode: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f" in watch_episode: {e}")
         return f"Error: {e}", 500
 
 def fetch_latest_movies(page=1):
@@ -418,7 +417,7 @@ def fetch_latest_movies(page=1):
             movie['poster_url'] = get_poster_url(movie.get('tmdb_id'), 'movie')
         return movies
     except Exception as e:
-        print(f"ERROR fetching movies: {e}")
+        logger.error(f" fetching movies: {e}")
         return []
 
 def fetch_latest_tvshows(page=1):
@@ -436,7 +435,7 @@ def fetch_latest_tvshows(page=1):
             serie['poster_url'] = get_poster_url(serie.get('tmdb_id'), 'tv')
         return series
     except Exception as e:
-        print(f"ERROR fetching tvshows: {e}")
+        logger.error(f" fetching tvshows: {e}")
         return []
 
 def fetch_trending_movies(page=1):
@@ -462,7 +461,7 @@ def fetch_trending_movies(page=1):
                 backdrop_cache[f"movie_{movie['tmdb_id']}_backdrop"] = movie['backdrop_path']
         return movies
     except Exception as e:
-        print(f"ERROR fetching trending movies: {e}")
+        logger.error(f" fetching trending movies: {e}")
         return []
 
 def fetch_trending_tvshows(page=1):
@@ -487,7 +486,7 @@ def fetch_trending_tvshows(page=1):
                 backdrop_cache[f"tv_{show['tmdb_id']}_backdrop"] = show['backdrop_path']
         return series
     except Exception as e:
-        print(f"ERROR fetching trending tvshows: {e}")
+        logger.error(f" fetching trending tvshows: {e}")
         return []
 
 def search_tmdb_movies(query, page=1):
@@ -517,7 +516,7 @@ def search_tmdb_movies(query, page=1):
                 filtered_movies.append(movie)
         return filtered_movies
     except Exception as e:
-        print(f"ERROR searching TMDB movies: {e}")
+        logger.error(f" searching TMDB movies: {e}")
         return []
 
 def search_tmdb_series(query, page=1):
@@ -546,7 +545,7 @@ def search_tmdb_series(query, page=1):
                 filtered_series.append(show)
         return filtered_series
     except Exception as e:
-        print(f"ERROR searching TMDB series: {e}")
+        logger.error(f" searching TMDB series: {e}")
         return []
 
 def get_imdb_id(tmdb_id, media_type):
@@ -557,7 +556,7 @@ def get_imdb_id(tmdb_id, media_type):
         data = get_cached_tmdb_data(url, headers)
         return data.get('imdb_id')
     except Exception as e:
-        print(f"ERROR getting IMDB ID for {tmdb_id}: {e}")
+        logger.error(f" getting IMDB ID for {tmdb_id}: {e}")
         return None
 def get_poster_url(tmdb_id, media_type='movie'):
     """Get poster URL - checks database first, then fetches from API if needed"""
@@ -582,7 +581,7 @@ def get_poster_url(tmdb_id, media_type='movie'):
                 poster_cache[key] = item.poster_path
                 return f"/poster/{media_type}/{tmdb_id}"
     except Exception as e:
-        print(f"ERROR getting poster from DB for {tmdb_id}: {e}")
+        logger.error(f" getting poster from DB for {tmdb_id}: {e}")
     
     # Fallback to API if not in database
     if not TMDB_ACCESS_TOKEN:
@@ -598,7 +597,7 @@ def get_poster_url(tmdb_id, media_type='movie'):
             poster_cache[key] = posters[0]['file_path']
             return f"/poster/{media_type}/{tmdb_id}"
     except Exception as e:
-        print(f"ERROR getting poster from API for {tmdb_id}: {e}")
+        logger.error(f" getting poster from API for {tmdb_id}: {e}")
     
     return None
 
@@ -623,7 +622,7 @@ def get_poster(media_type, tmdb_id):
         
         return send_file(io.BytesIO(image_response.content), mimetype=image_response.headers.get('content-type', 'image/jpeg'))
     except Exception as e:
-        print(f"ERROR proxying poster: {e}")
+        logger.error(f" proxying poster: {e}")
         abort(404)
 
 def get_backdrop_url(tmdb_id, media_type='movie'):
@@ -649,7 +648,7 @@ def get_backdrop_url(tmdb_id, media_type='movie'):
                 backdrop_cache[key] = item.backdrop_path
                 return f"/backdrop/{media_type}/{tmdb_id}"
     except Exception as e:
-        print(f"ERROR getting backdrop from DB for {tmdb_id}: {e}")
+        logger.error(f" getting backdrop from DB for {tmdb_id}: {e}")
     
     # Fallback to API if not in database
     if not TMDB_ACCESS_TOKEN:
@@ -665,7 +664,7 @@ def get_backdrop_url(tmdb_id, media_type='movie'):
             backdrop_cache[key] = backdrops[0]['file_path']
             return f"/backdrop/{media_type}/{tmdb_id}"
     except Exception as e:
-        print(f"ERROR getting backdrop from API for {tmdb_id}: {e}")
+        logger.error(f" getting backdrop from API for {tmdb_id}: {e}")
     
     return None
 
@@ -686,7 +685,7 @@ def get_backdrop(media_type, tmdb_id):
         
         return send_file(io.BytesIO(image_response.content), mimetype=image_response.headers.get('content-type', 'image/jpeg'))
     except Exception as e:
-        print(f"ERROR proxying backdrop: {e}")
+        logger.error(f" proxying backdrop: {e}")
         abort(404)
 
 # Add this new route for serving CSS files
@@ -696,7 +695,7 @@ def serve_css(filename):
     try:
         return send_from_directory(CSS_FOLDER, filename, mimetype='text/css')
     except Exception as e:
-        print(f"ERROR serving CSS {filename}: {e}")
+        logger.error(f" serving CSS {filename}: {e}")
         abort(404)
 
 def get_movie_details(imdb_id):
@@ -741,7 +740,7 @@ def get_movie_details(imdb_id):
                 'genres': genres,
             }
     except Exception as e:
-        print(f"ERROR getting movie details for {imdb_id}: {e}")
+        logger.error(f" getting movie details for {imdb_id}: {e}")
     return None
 
 def get_series_details(imdb_id):
@@ -759,7 +758,7 @@ def get_series_details(imdb_id):
                 'first_air_date': show.get('first_air_date', ''),
             }
     except Exception as e:
-        print(f"ERROR getting series details for {imdb_id}: {e}")
+        logger.error(f" getting series details for {imdb_id}: {e}")
     return None
 
 @app.route('/search')
@@ -801,7 +800,7 @@ def search():
                              movie_page=1, series_page=1, 
                              backdrop_urls=backdrop_urls, search_query=query)
     except Exception as e:
-        print(f"ERROR in search: {e}")
+        logger.error(f" in search: {e}")
         return f"Error searching: {e}", 500
 
 @app.route('/search_more_movies/<query>/<int:page>')
@@ -836,9 +835,6 @@ if __name__ == '__main__':
             return "127.0.0.1"  # Fallback
     
     network_ip = get_network_ip()
-    print("🎬 Local Media Server Starting...")
-    print(f"🌐 Local access: http://localhost:5000")
-    print(f"📱 Network access: http://{network_ip}:5000")
-    print("Press Ctrl+C to stop the server")
+    # Server starting silently - access at http://localhost:5000 or http://<your-ip>:5000
     
     app.run(host='0.0.0.0', port=5000, debug=os.getenv('FLASK_ENV') == 'development')

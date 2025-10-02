@@ -88,6 +88,39 @@ class TVShow(Base):
             'is_trending': self.is_trending,
         }
 
+class MyList(Base):
+    __tablename__ = 'my_list'
+    
+    id = Column(Integer, primary_key=True)
+    media_type = Column(String(10), nullable=False)  # 'movie' or 'series'
+    media_id = Column(String(20), nullable=False)  # imdb_id
+    tmdb_id = Column(Integer)
+    title = Column(String(255), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    def to_dict(self):
+        # Get the actual item data based on media_type
+        from db_service import DatabaseService
+        with DatabaseService() as db_service:
+            if self.media_type == 'movie':
+                item = db_service.get_movie_by_imdb_id(self.media_id)
+            else:
+                item = db_service.get_tvshow_by_imdb_id(self.media_id)
+            
+            if item:
+                item_dict = item.to_dict()
+                item_dict['type'] = self.media_type
+                item_dict['id'] = self.media_id
+                return item_dict
+        
+        # Fallback if item not found
+        return {
+            'type': self.media_type,
+            'id': self.media_id,
+            'tmdb_id': self.tmdb_id,
+            'title': self.title,
+        }
+
 # Database setup
 DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///homeflix.db')
 engine = create_engine(DATABASE_URL, echo=False)

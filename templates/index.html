@@ -1130,7 +1130,33 @@
         }
 
         function showMyList() {
-            alert('My List feature - You can save your favorite movies and shows here! (Feature coming soon)');
+            // Check if My List section exists
+            const myListSection = document.querySelector('#my-list-slider');
+            
+            if (myListSection && myListSection.closest('.content-row')) {
+                const section = myListSection.closest('.content-row');
+                
+                // Check if there are items in My List
+                const items = myListSection.querySelectorAll('.title-card');
+                
+                if (items.length > 0) {
+                    // Scroll to My List section
+                    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    
+                    // Highlight the section briefly
+                    section.style.transition = 'background-color 0.5s ease';
+                    section.style.backgroundColor = 'rgba(229, 9, 20, 0.1)';
+                    setTimeout(() => {
+                        section.style.backgroundColor = 'transparent';
+                    }, 1500);
+                } else {
+                    // No items in My List
+                    alert('Your list is empty!\n\nClick the + button on any movie or show to add it to your list.');
+                }
+            } else {
+                // My List section doesn't exist (no items)
+                alert('Your list is empty!\n\nClick the + button on any movie or show to add it to your list.');
+            }
         }
 
         // More Info button functionality
