@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ series_name }} - Seasons</title>
+    <link rel="stylesheet" href="/css/seasons.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <a href="/" class="logo">HOMEFLIX</a>
+            <div class="breadcrumb">
+                <a href="/">Home</a>
+                <span>›</span>
+                <span>{{ series_name }}</span>
+            </div>
+        </nav>
+    </header>
+
+    <section class="series-header">
+        <h1 class="series-title">{{ series_name }}</h1>
+        <p class="series-subtitle">Choose a season</p>
+    </section>
+
+    <main class="seasons-section">
+        <div class="section-header">
+            <h2 class="section-title">Seasons</h2>
+            <span class="season-count">{{ seasons|length }} seasons</span>
+        </div>
+        
+        <div class="seasons-grid">
+            {% for season in seasons %}
+            <div class="season-card">
+                <a href="/series/{{ series_name }}/{{ season.name }}">
+                    <div class="season-poster">
+                        <div class="season-number">{{ loop.index }}</div>
+                        <div class="season-label">Season</div>
+                        <div class="play-overlay">
+                            <div class="play-icon"></div>
+                        </div>
+                    </div>
+                    <div class="season-info">
+                        <h3 class="season-title">{{ season.name }}</h3>
+                        <span class="episode-count">{{ season.episodes }} episodes</span>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+</body>
+</html>

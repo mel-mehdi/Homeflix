@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if season %}{{ season }} - {% endif %}{{ series_name }} - Episodes</title>
+    <link rel="stylesheet" href="/css/episodes.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <a href="/" class="logo">HOMEFLIX</a>
+            <div class="breadcrumb">
+                <a href="/">Home</a>
+                <span>›</span>
+                {% if season %}
+                    <a href="/series/{{ series_name }}">{{ series_name }}</a>
+                    <span>›</span>
+                    <span>{{ season }}</span>
+                {% else %}
+                    <span>{{ series_name }}</span>
+                {% endif %}
+            </div>
+        </nav>
+    </header>
+
+    <section class="series-header">
+        <div style="display: flex; align-items: center; gap: 30px;">
+            {% if poster_image %}
+                <div class="series-poster" style="background-image: url('/images/{{ poster_image }}');"></div>
+            {% else %}
+                <div class="series-poster no-image"></div>
+            {% endif %}
+            <div>
+                <h1 class="series-title">{{ series_name }}</h1>
+                {% if season %}
+                    <p class="series-subtitle">{{ season }}</p>
+                {% else %}
+                    <p class="series-subtitle">All Episodes</p>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <main class="episodes-section">
+        <div class="section-header">
+            <h2 class="section-title">Episodes</h2>
+            <span class="episode-count">{{ episodes|length }} episodes</span>
+        </div>
+        
+        <div class="episodes-grid">
+            {% for episode in episodes %}
+            <div class="episode-card">
+                {% if season %}
+                    <a href="/watch/{{ series_name }}/{{ season }}/{{ episode }}">
+                {% else %}
+                    <a href="/watch/{{ series_name }}/{{ episode }}">
+                {% endif %}
+                    <div class="episode-thumbnail">
+                        <div class="episode-number">{{ loop.index }}</div>
+                        <div class="play-overlay">
+                            <div class="play-icon"></div>
+                        </div>
+                        <div class="duration-badge">HD</div>
+                    </div>
+                    <div class="episode-info">
+                        <h3 class="episode-title">{{ episode }}</h3>
+                        <p class="episode-meta">Episode {{ loop.index }}</p>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+</body>
+</html>

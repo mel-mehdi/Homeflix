@@ -1,0 +1,555 @@
+/* Netflix Video Player Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    font-family: 'Inter', 'Netflix Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background-color: #000000;
+    color: #ffffff;
+}
+
+/* Player Container */
+.player-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background-color: #000000;
+    overflow: hidden;
+}
+
+.video-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.video-wrapper iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    background-color: #000000;
+    z-index: 1;
+}
+
+/* Player Controls Overlay */
+.player-controls {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0.8) 0%,
+        rgba(0, 0, 0, 0.6) 30%,
+        transparent 70%
+    );
+    padding: 20px 60px;
+    transition: opacity 0.3s ease;
+}
+
+.player-controls.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Top Bar */
+.top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+/* Back Button */
+.back-button {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(42, 42, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
+    color: #ffffff;
+    padding: 8px 16px;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+}
+
+.back-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.back-button:active {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Episode/Movie Info */
+.episode-info {
+    flex: 1;
+    margin-left: 40px;
+}
+
+.episode-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 4px 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    line-height: 1.2;
+}
+
+.series-info {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+    font-weight: 400;
+}
+
+
+
+/* Loading Animation */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    border-top: 3px solid #e50914;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Error State */
+.error-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #000000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 60;
+    text-align: center;
+    padding: 40px;
+}
+
+.error-icon {
+    font-size: 64px;
+    color: #e50914;
+    margin-bottom: 24px;
+}
+
+.error-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 16px;
+}
+
+.error-message {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 32px;
+    max-width: 500px;
+    line-height: 1.5;
+}
+
+.error-button {
+    background-color: #e50914;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.error-button:hover {
+    background-color: #f40612;
+}
+
+/* Auto-hide controls */
+.player-container:hover .player-controls {
+    opacity: 1;
+}
+
+.player-container.controls-hidden .player-controls {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Skip Intro Button */
+.skip-intro-button {
+    position: absolute;
+    bottom: 100px;
+    right: 60px;
+    z-index: 101;
+    background-color: rgba(109, 109, 110, 0.9);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 4px;
+    padding: 10px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+    font-family: 'Inter', sans-serif;
+}
+
+.skip-intro-button:hover {
+    background-color: rgba(255, 255, 255, 0.95);
+    color: #000000;
+    border-color: #ffffff;
+    transform: scale(1.05);
+}
+
+.skip-intro-button:active {
+    transform: scale(0.98);
+}
+
+/* Next Episode Container */
+.next-episode-container {
+    position: absolute;
+    bottom: 80px;
+    right: 60px;
+    z-index: 101;
+    background-color: rgba(20, 20, 20, 0.95);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    max-width: 400px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.next-episode-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.next-episode-thumbnail {
+    position: relative;
+    width: 80px;
+    height: 45px;
+    background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.play-icon-overlay {
+    font-size: 20px;
+    color: #ffffff;
+    opacity: 0.8;
+}
+
+.next-episode-text {
+    flex: 1;
+}
+
+.next-episode-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0 0 4px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.next-episode-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0;
+}
+
+.watch-next-button {
+    background-color: #e50914;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.watch-next-button:hover {
+    background-color: #f40612;
+    transform: scale(1.05);
+}
+
+.watch-next-button:active {
+    transform: scale(0.98);
+}
+
+/* Autoplay Countdown */
+.autoplay-countdown {
+    position: absolute;
+    bottom: 140px;
+    right: 60px;
+    z-index: 102;
+    background-color: rgba(20, 20, 20, 0.95);
+    border-radius: 8px;
+    padding: 16px 24px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.countdown-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.countdown-content p {
+    margin: 0;
+    font-size: 14px;
+    color: #ffffff;
+    font-weight: 500;
+}
+
+#countdownTimer {
+    color: #e50914;
+    font-weight: 700;
+}
+
+.cancel-autoplay {
+    background-color: transparent;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 4px;
+    padding: 6px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cancel-autoplay:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: #ffffff;
+}
+
+/* Toast Notifications */
+.toast-notification {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    z-index: 200;
+    background-color: rgba(20, 20, 20, 0.95);
+    color: #ffffff;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.toast-notification.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Source Switcher Button */
+.source-switcher-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(42, 42, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
+    color: #ffffff;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+}
+
+.source-switcher-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.source-switcher-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Source Menu */
+.source-menu {
+    position: absolute;
+    top: 80px;
+    right: 60px;
+    background: rgba(20, 20, 20, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 20px;
+    min-width: 300px;
+    max-width: 400px;
+    z-index: 200;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.source-menu.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.source-menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.source-menu-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    color: #ffffff;
+}
+
+.close-menu-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.close-menu-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+.source-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.source-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.8);
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.source-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+}
+
+.source-option.active {
+    background: rgba(229, 9, 20, 0.2);
+    border-color: #e50914;
+    color: #ffffff;
+}
+
+.source-option.active svg circle {
+    fill: #e50914;
+}
+
+.source-option svg {
+    flex-shrink: 0;
+}
+
+.source-info {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 0;
+    text-align: center;
+    line-height: 1.4;
+}
+
+/* Full screen styles */
+.player-container:-webkit-full-screen {
+    background-color: #000000;
+}
+
+.player-container:-moz-full-screen {
+    background-color: #000000;
+}
+
+.player-container:fullscreen {
+    background-color: #000000;
+}

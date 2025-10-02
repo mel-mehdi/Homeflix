@@ -1,0 +1,236 @@
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: #141414;
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: #141414;
+            padding: 15px 60px;
+            border-bottom: 1px solid #333;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #e50914;
+            text-decoration: none;
+        }
+        
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+        
+        .breadcrumb a {
+            color: #ccc;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .breadcrumb a:hover {
+            color: #e50914;
+        }
+        
+        .breadcrumb span {
+            color: #666;
+        }
+        
+        .series-header {
+            padding: 40px 60px;
+            background: linear-gradient(135deg, #e50914 0%, #b20710 100%);
+        }
+        
+        .series-title {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .series-subtitle {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+        
+        .seasons-section {
+            padding: 40px 60px;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .season-count {
+            background: #333;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #ccc;
+        }
+        
+        .seasons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 30px;
+        }
+        
+        .season-card {
+            background: #222;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            border: 2px solid transparent;
+        }
+        
+        .season-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+            border-color: #e50914;
+        }
+        
+        .season-poster {
+            width: 100%;
+            height: 180px;
+            background: linear-gradient(135deg, #e50914 0%, #b20710 50%, #8b0000 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .season-poster::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 70%);
+        }
+        
+        .season-number {
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+            position: relative;
+            z-index: 1;
+            margin-bottom: 5px;
+        }
+        
+        .season-label {
+            font-size: 14px;
+            color: rgba(255,255,255,0.8);
+            position: relative;
+            z-index: 1;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .play-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+        
+        .season-card:hover .play-overlay {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+        
+        .play-icon {
+            width: 0;
+            height: 0;
+            border-left: 20px solid white;
+            border-top: 12px solid transparent;
+            border-bottom: 12px solid transparent;
+            margin-left: 4px;
+        }
+        
+        .season-info {
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .season-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: white;
+        }
+        
+        .episode-count {
+            background: #e50914;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+        
+        .season-card a {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            .header, .series-header, .seasons-section {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+            
+            .series-title {
+                font-size: 28px;
+            }
+            
+            .seasons-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 20px;
+            }
+            
+            .breadcrumb {
+                flex-wrap: wrap;
+            }
+        }

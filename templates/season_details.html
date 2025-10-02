@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ series.title }} - {{ season.name }} - Homeflix</title>
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .season-page {
+            background: #141414;
+            color: white;
+            min-height: 100vh;
+            padding-top: 70px;
+        }
+
+        .season-header {
+            padding: 60px;
+            background: linear-gradient(to bottom, rgba(20, 20, 20, 0.7), #141414),
+                        url('{{ series.backdrop_url }}') center/cover;
+            border-bottom: 1px solid #333;
+        }
+
+        .breadcrumb {
+            color: #aaa;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+        }
+
+        .breadcrumb a {
+            color: #aaa;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .breadcrumb a:hover {
+            color: white;
+        }
+
+        .season-title-main {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .season-subtitle {
+            font-size: 1.5rem;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .season-overview {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            max-width: 800px;
+            color: #ddd;
+        }
+
+        .episodes-section {
+            padding: 40px 60px;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+        }
+
+        .episodes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .episode-card {
+            background: #2f2f2f;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .episode-card:hover {
+            transform: translateX(10px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        .episode-thumbnail {
+            width: 280px;
+            height: 160px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            flex-shrink: 0;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .episode-number-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .play-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .episode-card:hover .play-icon {
+            opacity: 1;
+        }
+
+        .play-icon svg {
+            width: 24px;
+            height: 24px;
+            margin-left: 3px;
+        }
+
+        .episode-content {
+            padding: 20px;
+            flex: 1;
+        }
+
+        .episode-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+
+        .episode-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .episode-meta {
+            display: flex;
+            gap: 15px;
+            color: #aaa;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .episode-rating {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .star-icon {
+            color: #ffd700;
+        }
+
+        .episode-overview {
+            color: #ccc;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .back-button {
+            position: fixed;
+            top: 80px;
+            left: 30px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            z-index: 100;
+            transition: background 0.3s;
+        }
+
+        .back-button:hover {
+            background: rgba(0, 0, 0, 0.9);
+        }
+    </style>
+</head>
+<body>
+    <header class="navbar" id="navbar">
+        <div class="navbar-left">
+            <a href="/" class="netflix-logo">HOMEFLIX</a>
+            <nav class="main-nav">
+                <a href="/" class="nav-link">Home</a>
+                <a href="javascript:void(0)" class="nav-link">TV Shows</a>
+                <a href="javascript:void(0)" class="nav-link">Movies</a>
+            </nav>
+        </div>
+    </header>
+
+    <button class="back-button" onclick="window.location.href='/series/{{ imdb_id }}'">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" fill="currentColor"/>
+        </svg>
+        Back to Series
+    </button>
+
+    <div class="season-page">
+        <!-- Season Header -->
+        <div class="season-header">
+            <div class="breadcrumb">
+                <a href="/">Home</a> › 
+                <a href="/series/{{ imdb_id }}">{{ series.title }}</a> › 
+                {{ season.name }}
+            </div>
+            
+            <h1 class="season-title-main">{{ series.title }}</h1>
+            <h2 class="season-subtitle">{{ season.name }}</h2>
+            
+            {% if season.overview %}
+            <p class="season-overview">{{ season.overview }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Episodes Section -->
+        <div class="episodes-section">
+            <h2 class="section-title">Episodes ({{ season.episodes|length }})</h2>
+            
+            <div class="episodes-list">
+                {% for episode in season.episodes %}
+                <div class="episode-card" onclick="window.location.href='/watch/series/{{ imdb_id }}/season/{{ season.season_number }}/episode/{{ episode.episode_number }}'">
+                    <div class="episode-thumbnail" {% if episode.still_path %}style="background-image: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)), url('https://image.tmdb.org/t/p/w300{{ episode.still_path }}');"{% endif %}>
+                        <div class="episode-number-badge">Episode {{ episode.episode_number }}</div>
+                        <div class="play-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M8 5v14l11-7z" fill="black"/>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="episode-content">
+                        <div class="episode-header">
+                            <div>
+                                <div class="episode-title">{{ episode.name }}</div>
+                                <div class="episode-meta">
+                                    {% if episode.runtime %}
+                                    <span>{{ episode.runtime }}m</span>
+                                    {% endif %}
+                                    {% if episode.air_date %}
+                                    <span>{{ episode.air_date }}</span>
+                                    {% endif %}
+                                    {% if episode.vote_average %}
+                                    <span class="episode-rating">
+                                        <span class="star-icon">★</span>
+                                        {{ "%.1f"|format(episode.vote_average) }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if episode.overview %}
+                        <p class="episode-overview">{{ episode.overview }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Navbar scroll effect
+        window.addEventListener('scroll', function() {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.style.background = 'rgba(20, 20, 20, 0.95)';
+            } else {
+                navbar.style.background = 'transparent';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ series.title }} - Homeflix</title>
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .series-details-page {
+            background: #141414;
+            color: white;
+            min-height: 100vh;
+            padding-top: 70px;
+        }
+
+        .series-hero {
+            position: relative;
+            height: 70vh;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: flex-end;
+            padding: 60px;
+            background: linear-gradient(to top, #141414 0%, rgba(20, 20, 20, 0.7) 50%, rgba(20, 20, 20, 0.4) 100%),
+                        url('{{ series.backdrop_url }}') center/cover;
+        }
+
+        .series-hero-content {
+            max-width: 800px;
+            z-index: 2;
+        }
+
+        .series-title-main {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .series-meta {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+
+        .match-score {
+            color: #46d369;
+            font-weight: 700;
+        }
+
+        .rating-badge {
+            border: 1px solid #ddd;
+            padding: 2px 8px;
+            font-size: 0.9rem;
+        }
+
+        .series-overview {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            max-width: 700px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .series-action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .btn-play, .btn-add-list, .btn-like {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+
+        .btn-play {
+            background: white;
+            color: black;
+        }
+
+        .btn-play:hover {
+            background: rgba(255, 255, 255, 0.75);
+        }
+
+        .btn-add-list, .btn-like {
+            background: rgba(42, 42, 42, 0.6);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .btn-add-list:hover, .btn-like:hover {
+            border-color: white;
+        }
+
+        .series-info-section {
+            padding: 40px 60px;
+        }
+
+        .info-row {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+
+        .info-label {
+            color: #777;
+            min-width: 120px;
+            font-weight: 600;
+        }
+
+        .info-value {
+            color: white;
+        }
+
+        .genre-tag {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 12px;
+            border-radius: 4px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .seasons-section {
+            padding: 40px 60px;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+        }
+
+        .seasons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .season-card {
+            background: #2f2f2f;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .season-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .season-poster {
+            width: 100%;
+            height: 180px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .season-number-large {
+            font-size: 4rem;
+            font-weight: 700;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .season-label {
+            font-size: 1.2rem;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .season-info {
+            padding: 20px;
+        }
+
+        .season-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .season-meta {
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        .cast-section {
+            padding: 40px 60px;
+        }
+
+        .cast-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 20px;
+        }
+
+        .cast-card {
+            text-align: center;
+        }
+
+        .cast-photo {
+            width: 100%;
+            aspect-ratio: 2/3;
+            border-radius: 8px;
+            background: #2f2f2f;
+            margin-bottom: 10px;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .cast-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+
+        .cast-character {
+            color: #aaa;
+            font-size: 0.85rem;
+        }
+
+        .back-button {
+            position: fixed;
+            top: 80px;
+            left: 30px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            z-index: 100;
+            transition: background 0.3s;
+        }
+
+        .back-button:hover {
+            background: rgba(0, 0, 0, 0.9);
+        }
+    </style>
+</head>
+<body>
+    <header class="navbar" id="navbar">
+        <div class="navbar-left">
+            <a href="/" class="netflix-logo">HOMEFLIX</a>
+            <nav class="main-nav">
+                <a href="/" class="nav-link">Home</a>
+                <a href="javascript:void(0)" class="nav-link">TV Shows</a>
+                <a href="javascript:void(0)" class="nav-link">Movies</a>
+            </nav>
+        </div>
+    </header>
+
+    <button class="back-button" onclick="window.history.back()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" fill="currentColor"/>
+        </svg>
+        Back
+    </button>
+
+    <div class="series-details-page">
+        <!-- Hero Section -->
+        <div class="series-hero">
+            <div class="series-hero-content">
+                <h1 class="series-title-main">{{ series.title }}</h1>
+                
+                <div class="series-meta">
+                    <span class="match-score">{{ (series.vote_average * 10) | round | int }}% Match</span>
+                    <span>{{ series.year }}</span>
+                    <span class="rating-badge">{{ series.rating or 'TV-MA' }}</span>
+                    <span>{{ series.number_of_seasons }} Season{% if series.number_of_seasons != 1 %}s{% endif %}</span>
+                    <span class="genre-tag">HD</span>
+                </div>
+
+                {% if series.tagline %}
+                <p style="font-style: italic; color: #ddd; margin-bottom: 15px;">{{ series.tagline }}</p>
+                {% endif %}
+
+                <p class="series-overview">{{ series.overview }}</p>
+
+                <div class="series-action-buttons">
+                    <button class="btn-play" onclick="window.location.href='/watch/series/{{ imdb_id }}'">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8 5v14l11-7z" fill="currentColor"/>
+                        </svg>
+                        Play
+                    </button>
+                    <button class="btn-add-list">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor"/>
+                        </svg>
+                        My List
+                    </button>
+                    <button class="btn-like">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z" fill="currentColor"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Series Info Section -->
+        <div class="series-info-section">
+            {% if series.genres %}
+            <div class="info-row">
+                <div class="info-label">Genres:</div>
+                <div class="info-value">
+                    {% for genre in series.genres %}
+                    <span class="genre-tag">{{ genre.name if genre.name else genre }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if series.created_by %}
+            <div class="info-row">
+                <div class="info-label">Created by:</div>
+                <div class="info-value">
+                    {% for creator in series.created_by %}
+                    {{ creator.name }}{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if series.networks %}
+            <div class="info-row">
+                <div class="info-label">Network:</div>
+                <div class="info-value">
+                    {% for network in series.networks %}
+                    {{ network.name }}{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if series.status %}
+            <div class="info-row">
+                <div class="info-label">Status:</div>
+                <div class="info-value">{{ series.status }}</div>
+            </div>
+            {% endif %}
+
+            {% if series.first_air_date %}
+            <div class="info-row">
+                <div class="info-label">First Aired:</div>
+                <div class="info-value">{{ series.first_air_date }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Seasons Section -->
+        {% if series.seasons %}
+        <div class="seasons-section">
+            <h2 class="section-title">Seasons</h2>
+            <div class="seasons-grid">
+                {% for season in series.seasons %}
+                <div class="season-card" onclick="window.location.href='/series/{{ imdb_id }}/season/{{ season.season_number }}'">
+                    <div class="season-poster" {% if season.poster_path %}style="background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://image.tmdb.org/t/p/w500{{ season.poster_path }}');"{% endif %}>
+                        <div class="season-number-large">{{ season.season_number }}</div>
+                        <div class="season-label">Season</div>
+                    </div>
+                    <div class="season-info">
+                        <div class="season-name">{{ season.name }}</div>
+                        <div class="season-meta">
+                            {{ season.episode_count }} Episode{% if season.episode_count != 1 %}s{% endif %}
+                            {% if season.air_date %} • {{ season.air_date[:4] }}{% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Cast Section -->
+        {% if series.cast %}
+        <div class="cast-section">
+            <h2 class="section-title">Cast</h2>
+            <div class="cast-grid">
+                {% for actor in series.cast %}
+                <div class="cast-card">
+                    <div class="cast-photo" {% if actor.profile_path %}style="background-image: url('https://image.tmdb.org/t/p/w185{{ actor.profile_path }}');"{% endif %}></div>
+                    <div class="cast-name">{{ actor.name }}</div>
+                    <div class="cast-character">{{ actor.character }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Navbar scroll effect
+        window.addEventListener('scroll', function() {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.style.background = 'rgba(20, 20, 20, 0.95)';
+            } else {
+                navbar.style.background = 'transparent';
+            }
+        });
+    </script>
+</body>
+</html>

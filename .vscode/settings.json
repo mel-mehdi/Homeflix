@@ -1,0 +1,15 @@
+{
+  "terminal.integrated.defaultProfile.linux": "host-spawn",
+  "terminal.integrated.profiles.linux": {
+    "host-spawn": {
+      "path": "host-spawn",
+      "args": ["zsh"]
+    },
+    "bash": {
+      "path": "zsh"
+    },
+    "sh": {
+      "path": "sh"
+    }
+  }
+}

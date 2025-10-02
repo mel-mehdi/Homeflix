@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - Homeflix</title>
+    <link rel="stylesheet" href="/css/player.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="player-container">
+        <div class="video-wrapper">
+            <iframe src="{{ embed_url }}" 
+                    width="100%" 
+                    height="100%" 
+                    frameborder="0" 
+                    allowfullscreen
+                    webkitallowfullscreen
+                    mozallowfullscreen
+                    allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                    referrerpolicy="origin"></iframe>
+            
+            <div class="player-controls" id="topControls">
+                <div class="top-bar">
+                    <a href="javascript:history.back()" class="back-button">
+                        ← Back to Browse
+                    </a>
+                    
+                    <div class="episode-info">
+                        <h2 class="episode-title">{{ title }}</h2>
+                        <p class="series-info">{{ type|title }}</p>
+                    </div>
+                    
+                    <!-- Source Switcher Button -->
+                    <button class="source-switcher-btn" id="sourceSwitch" onclick="showSourceMenu()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
+                        </svg>
+                        Change Source
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Source Selector Menu -->
+            <div class="source-menu" id="sourceMenu" style="display: none;">
+                <div class="source-menu-header">
+                    <h3>Select Video Source</h3>
+                    <button class="close-menu-btn" onclick="hideSourceMenu()">✕</button>
+                </div>
+                <div class="source-list">
+                    {% if embed_sources %}
+                        {% for source in embed_sources %}
+                        <button class="source-option {% if loop.index == 1 %}active{% endif %}" 
+                                data-source="{{ source }}" 
+                                onclick="switchSource('{{ source }}', this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                            Source {{ loop.index }}
+                        </button>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <p class="source-info">Try a different source if the video doesn't play</p>
+            </div>
+
+            <!-- Skip Intro Button -->
+            <button class="skip-intro-button" id="skipIntroBtn" style="display: none;" onclick="skipIntro()">
+                Skip Intro
+            </button>
+
+            <!-- Skip Credits/Next Episode -->
+            <div class="next-episode-container" id="nextEpisodeContainer" style="display: none;">
+                <div class="next-episode-info">
+                    <div class="next-episode-thumbnail">
+                        <div class="play-icon-overlay">▶</div>
+                    </div>
+                    <div class="next-episode-text">
+                        <p class="next-episode-label">Next Episode</p>
+                        <h3 class="next-episode-title">Continue Watching</h3>
+                    </div>
+                </div>
+                <button class="watch-next-button" onclick="playNextEpisode()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8 5v14l11-7z" fill="currentColor"/>
+                    </svg>
+                    Play
+                </button>
+            </div>
+
+            <!-- Auto-play countdown -->
+            <div class="autoplay-countdown" id="autoplayCountdown" style="display: none;">
+                <div class="countdown-content">
+                    <p>Next episode playing in <span id="countdownTimer">5</span> seconds</p>
+                    <button class="cancel-autoplay" onclick="cancelAutoplay()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let controlsVisible = true;
+        let controlsTimeout;
+        let playbackStartTime = Date.now();
+        let currentProgress = 0;
+        let videoDuration = 0;
+        let introStart = 30; // Intro starts at 30 seconds
+        let introEnd = 90;   // Intro ends at 90 seconds
+        let creditsStart = 0; // Will be set based on video duration
+        let hasSkippedIntro = false;
+        let autoplayTimer = null;
+        let countdownInterval = null;
+        
+        const videoType = "{{ type }}";
+        const videoId = "{{ embed_url }}".match(/(?:tmdb=|\/)(tt\d+|\d+)/)?.[1] || '';
+        const videoTitle = "{{ title }}";
+        let currentSourceIndex = 0;
+        
+        // Show/hide controls on mouse movement
+        document.addEventListener('mousemove', showControls);
+        document.addEventListener('click', showControls);
+        
+        function showControls() {
+            const controls = document.getElementById('topControls');
+            controls.style.opacity = '1';
+            controlsVisible = true;
+            
+            clearTimeout(controlsTimeout);
+            controlsTimeout = setTimeout(() => {
+                controls.style.opacity = '0';
+                controlsVisible = false;
+            }, 3000);
+        }
+        
+        // Hide controls when not moving mouse
+        document.addEventListener('mouseleave', function() {
+            const controls = document.getElementById('topControls');
+            controls.style.opacity = '0';
+            controlsVisible = false;
+        });
+        
+        // Show controls initially
+        showControls();
+        
+        // Simulate video progress tracking (since iframe blocks direct access)
+        function startProgressTracking() {
+            setInterval(() => {
+                currentProgress = (Date.now() - playbackStartTime) / 1000; // seconds
+                
+                // Show skip intro button
+                if (currentProgress >= introStart && currentProgress <= introEnd && !hasSkippedIntro) {
+                    document.getElementById('skipIntroBtn').style.display = 'block';
+                } else {
+                    document.getElementById('skipIntroBtn').style.display = 'none';
+                }
+                
+                // Show next episode container near end
+                if (videoType === 'series' && videoDuration > 0 && currentProgress >= (videoDuration - 120)) {
+                    document.getElementById('nextEpisodeContainer').style.display = 'flex';
+                }
+                
+                // Start autoplay countdown
+                if (videoType === 'series' && videoDuration > 0 && currentProgress >= (videoDuration - 30)) {
+                    startAutoplayCountdown();
+                }
+                
+                // Save progress every 10 seconds
+                if (Math.floor(currentProgress) % 10 === 0) {
+                    saveProgress();
+                }
+            }, 1000);
+        }
+        
+        function skipIntro() {
+            hasSkippedIntro = true;
+            document.getElementById('skipIntroBtn').style.display = 'none';
+            // In a real implementation, this would seek the video
+            playbackStartTime = Date.now() - (introEnd * 1000);
+            showToast('Skipped intro');
+        }
+        
+        function playNextEpisode() {
+            showToast('Loading next episode...');
+            // In a real implementation, navigate to next episode
+            setTimeout(() => {
+                window.location.href = '/'; // Placeholder - would navigate to next episode
+            }, 1000);
+        }
+        
+        function startAutoplayCountdown() {
+            if (autoplayTimer) return; // Already started
+            
+            let countdown = 5;
+            document.getElementById('autoplayCountdown').style.display = 'block';
+            document.getElementById('countdownTimer').textContent = countdown;
+            
+            countdownInterval = setInterval(() => {
+                countdown--;
+                document.getElementById('countdownTimer').textContent = countdown;
+                
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    playNextEpisode();
+                }
+            }, 1000);
+            
+            autoplayTimer = true;
+        }
+        
+        function cancelAutoplay() {
+            clearInterval(countdownInterval);
+            document.getElementById('autoplayCountdown').style.display = 'none';
+            autoplayTimer = null;
+        }
+        
+        function saveProgress() {
+            fetch('/api/continue_watching', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: videoType,
+                    id: videoId,
+                    title: videoTitle,
+                    progress: currentProgress,
+                    duration: videoDuration || 3600,
+                    poster_url: ''
+                })
+            }).catch(err => console.log('Failed to save progress:', err));
+        }
+        
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.classList.add('show'), 100);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+        }
+        
+        // Handle fullscreen
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'f' || e.key === 'F') {
+                if (document.fullscreenElement) {
+                    document.exitFullscreen();
+                } else {
+                    document.documentElement.requestFullscreen();
+                }
+            }
+            if (e.key === 'Escape') {
+                showControls();
+            }
+        });
+        
+        // Start tracking when page loads
+        window.addEventListener('load', () => {
+            // Estimate video duration (for movies ~7200s, series ~2700s)
+            videoDuration = videoType === 'movie' ? 7200 : 2700;
+            creditsStart = videoDuration - 180; // Credits start 3 minutes before end
+            
+            startProgressTracking();
+            
+            // Save initial view
+            setTimeout(() => saveProgress(), 5000);
+        });
+        
+        // Save progress before leaving
+        window.addEventListener('beforeunload', saveProgress);
+        
+        // Source switching functionality
+        function showSourceMenu() {
+            const menu = document.getElementById('sourceMenu');
+            menu.style.display = 'flex';
+            setTimeout(() => menu.classList.add('show'), 10);
+        }
+        
+        function hideSourceMenu() {
+            const menu = document.getElementById('sourceMenu');
+            menu.classList.remove('show');
+            setTimeout(() => menu.style.display = 'none', 300);
+        }
+        
+        function switchSource(sourceUrl, button) {
+            // Update active button
+            document.querySelectorAll('.source-option').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            // Switch iframe source
+            const iframe = document.querySelector('iframe');
+            iframe.src = sourceUrl;
+            
+            // Show notification
+            showToast('Switching video source...');
+            
+            // Hide menu after short delay
+            setTimeout(hideSourceMenu, 500);
+        }
+    </script>
+</body>
+</html>
