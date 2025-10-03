@@ -99,26 +99,14 @@ class MyList(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     
     def to_dict(self):
-        # Get the actual item data based on media_type
-        from db_service import DatabaseService
-        with DatabaseService() as db_service:
-            if self.media_type == 'movie':
-                item = db_service.get_movie_by_imdb_id(self.media_id)
-            else:
-                item = db_service.get_tvshow_by_imdb_id(self.media_id)
-            
-            if item:
-                item_dict = item.to_dict()
-                item_dict['type'] = self.media_type
-                item_dict['id'] = self.media_id
-                return item_dict
-        
-        # Fallback if item not found
+        # Simple dict representation without nested queries
         return {
             'type': self.media_type,
             'id': self.media_id,
+            'imdb_id': self.media_id,
             'tmdb_id': self.tmdb_id,
             'title': self.title,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
         }
 
 # Database setup

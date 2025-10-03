@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, Response, send_file, send_from_directory, abort, redirect
+from flask import Flask, render_template, request, Response, send_file, send_from_directory, abort, redirect, jsonify
 import os
 import requests
 import io
@@ -75,8 +75,13 @@ def _populate_image_cache(items, media_type):
             if not tmdb_id:
                 continue
             
+            # For mixed types (My List), determine type from item
+            current_type = media_type
+            if media_type == 'mixed':
+                current_type = 'movie' if item.get('type') == 'movie' else 'tv'
+            
             # Get the database object to access poster_path and backdrop_path
-            if media_type == 'movie':
+            if current_type == 'movie':
                 db_item = db_service.get_movie_by_tmdb_id(tmdb_id)
             else:
                 db_item = db_service.get_tvshow_by_tmdb_id(tmdb_id)
@@ -84,11 +89,11 @@ def _populate_image_cache(items, media_type):
             if db_item:
                 # Populate poster cache
                 if db_item.poster_path:
-                    poster_cache[f"{media_type}_{tmdb_id}_poster"] = db_item.poster_path
+                    poster_cache[f"{current_type}_{tmdb_id}_poster"] = db_item.poster_path
                 
                 # Populate backdrop cache
                 if db_item.backdrop_path:
-                    backdrop_cache[f"{media_type}_{tmdb_id}_backdrop"] = db_item.backdrop_path
+                    backdrop_cache[f"{current_type}_{tmdb_id}_backdrop"] = db_item.backdrop_path
 
 @app.route('/favicon.ico')
 def favicon():
@@ -107,12 +112,15 @@ def index():
             series = db_service.get_latest_tvshows(series_page)
             trending_movies = db_service.get_trending_movies()
             trending_series = db_service.get_trending_tvshows()
+            my_list = db_service.get_my_list()  # Get My List items
         
         # Populate image caches from database results
         _populate_image_cache(movies, 'movie')
         _populate_image_cache(series, 'tv')
         _populate_image_cache(trending_movies, 'movie')
         _populate_image_cache(trending_series, 'tv')
+        if my_list:
+            _populate_image_cache(my_list, 'mixed')  # My List can have both movies and series
         
         # Get backdrop URLs for hero section from series (already in database results)
         backdrop_urls = []
@@ -133,7 +141,7 @@ def index():
         return render_template('index.html', movies=movies, series=series, 
                              trending_movies=trending_movies, trending_series=trending_series, 
                              movie_page=movie_page, series_page=series_page, 
-                             backdrop_urls=backdrop_urls)
+                             backdrop_urls=backdrop_urls, my_list=my_list)
     except Exception as e:
         logger.error(f" in index: {e}")
         return f"Error accessing data: {e}", 500
@@ -820,6 +828,54 @@ def search_more_series(query, page):
         return {'series': series}
     except Exception as e:
         return {'error': str(e)}, 500
+
+@app.route('/api/my-list', methods=['POST'])
+def api_my_list():
+    """API endpoint to add/remove items from My List"""
+    try:
+        data = request.get_json()
+        action = data.get('action')  # 'add' or 'remove'
+        media_type = data.get('type')  # 'movie' or 'series'
+        media_id = data.get('id')  # imdb_id
+        tmdb_id = data.get('tmdb_id')
+        title = data.get('title', 'Unknown')
+        
+        logger.info(f"My List {action}: {media_type} - {title} (ID: {media_id}, TMDB: {tmdb_id})")
+        
+        if not action or not media_type or not media_id:
+            return jsonify({'error': 'Missing required parameters'}), 400
+        
+        with DatabaseService() as db_service:
+            if action == 'add':
+                item, added = db_service.add_to_my_list(media_type, media_id, tmdb_id, title)
+                logger.info(f"Add result: added={added}")
+                return jsonify({'success': True, 'added': True, 'message': 'Added to My List' if added else 'Already in My List'})
+            elif action == 'remove':
+                removed = db_service.remove_from_my_list(media_type, media_id)
+                logger.info(f"Remove result: removed={removed}")
+                return jsonify({'success': True, 'removed': removed, 'added': False, 'message': 'Removed from My List'})
+            else:
+                return jsonify({'error': 'Invalid action'}), 400
+                
+    except Exception as e:
+        logger.error(f"Error in api_my_list: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/my-list', methods=['GET'])
+def get_my_list_api():
+    """API endpoint to get My List items"""
+    try:
+        with DatabaseService() as db_service:
+            my_list = db_service.get_my_list()
+            logger.info(f"Fetching My List: {len(my_list)} items")
+            return jsonify({'success': True, 'items': my_list})
+    except Exception as e:
+        logger.error(f"Error in get_my_list_api: {e}")
+        return jsonify({'error': str(e)}), 500
+        return jsonify({'success': True, 'items': my_list})
+    except Exception as e:
+        logger.error(f"Error in get_my_list_api: {e}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     import socket

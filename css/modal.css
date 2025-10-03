@@ -1,0 +1,213 @@
+/* My List Modal Styles */
+.my-list-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.my-list-modal.active {
+    opacity: 1;
+}
+
+.my-list-modal-content {
+    background: #181818;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 1200px;
+    max-height: 85vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.my-list-modal.active .my-list-modal-content {
+    transform: scale(1);
+}
+
+.my-list-modal-header {
+    padding: 24px 32px;
+    border-bottom: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.my-list-modal-header h2 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.my-list-modal-close {
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.my-list-modal-close:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.my-list-modal-body {
+    padding: 24px 32px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.my-list-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 24px;
+}
+
+.my-list-item {
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.my-list-item:hover {
+    transform: scale(1.05);
+}
+
+.my-list-item-poster {
+    position: relative;
+    aspect-ratio: 2/3;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #2a2a2a;
+}
+
+.my-list-item-poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.my-list-item-poster .placeholder-image {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #e50914 0%, #831010 100%);
+    font-size: 48px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.my-list-item-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.8) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 16px;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.my-list-item:hover .my-list-item-overlay {
+    opacity: 1;
+}
+
+.my-list-item-overlay .btn {
+    width: 100%;
+    font-size: 14px;
+}
+
+.my-list-item-overlay .btn-icon {
+    width: 40px;
+    height: 40px;
+    padding: 8px;
+}
+
+.my-list-item-info {
+    margin-top: 8px;
+}
+
+.my-list-item-info h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.my-list-item-type {
+    margin: 4px 0 0 0;
+    font-size: 13px;
+    color: #999;
+}
+
+/* Fade out animation */
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .my-list-modal-content {
+        width: 95%;
+        max-height: 90vh;
+    }
+    
+    .my-list-modal-header {
+        padding: 16px 20px;
+    }
+    
+    .my-list-modal-header h2 {
+        font-size: 24px;
+    }
+    
+    .my-list-modal-body {
+        padding: 16px 20px;
+    }
+    
+    .my-list-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .my-list-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 12px;
+    }
+}

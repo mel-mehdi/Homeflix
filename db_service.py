@@ -1,4 +1,4 @@
-from database import Movie, TVShow, get_db, close_db, init_db
+from database import Movie, TVShow, get_db, close_db, init_db, MyList
 from sqlalchemy import or_, and_, func
 from datetime import datetime, timedelta
 import requests
@@ -149,3 +149,80 @@ class DatabaseService:
         if media_type in ['tv', 'all']:
             self.db.query(TVShow).update({TVShow.is_trending: False})
         self.db.commit()
+    
+    # My List operations
+    def get_my_list(self):
+        """Get all items in My List"""
+        items = self.db.query(MyList).order_by(MyList.created_at.desc()).all()
+        result = []
+        
+        for item in items:
+            # Get the actual movie or TV show data
+            if item.media_type == 'movie':
+                media_item = self.get_movie_by_imdb_id(item.media_id)
+            else:  # 'series' or 'tv'
+                media_item = self.get_tvshow_by_imdb_id(item.media_id)
+            
+            if media_item:
+                # Get the full item data
+                item_dict = media_item.to_dict()
+                item_dict['type'] = item.media_type
+                item_dict['id'] = item.media_id
+                result.append(item_dict)
+            else:
+                # Fallback if item not found in database
+                result.append({
+                    'type': item.media_type,
+                    'id': item.media_id,
+                    'imdb_id': item.media_id,
+                    'tmdb_id': item.tmdb_id,
+                    'title': item.title,
+                    'poster_url': None,
+                    'backdrop_url': None,
+                })
+        
+        return result
+    
+    def add_to_my_list(self, media_type, media_id, tmdb_id, title):
+        """Add an item to My List"""
+        # Check if already in list
+        existing = self.db.query(MyList).filter(
+            MyList.media_type == media_type,
+            MyList.media_id == media_id
+        ).first()
+        
+        if existing:
+            return existing, False  # Already exists
+        
+        # Create new entry
+        new_item = MyList(
+            media_type=media_type,
+            media_id=media_id,
+            tmdb_id=tmdb_id,
+            title=title
+        )
+        self.db.add(new_item)
+        self.db.commit()
+        self.db.refresh(new_item)
+        return new_item, True  # Newly added
+    
+    def remove_from_my_list(self, media_type, media_id):
+        """Remove an item from My List"""
+        item = self.db.query(MyList).filter(
+            MyList.media_type == media_type,
+            MyList.media_id == media_id
+        ).first()
+        
+        if item:
+            self.db.delete(item)
+            self.db.commit()
+            return True
+        return False
+    
+    def is_in_my_list(self, media_type, media_id):
+        """Check if an item is in My List"""
+        exists = self.db.query(MyList).filter(
+            MyList.media_type == media_type,
+            MyList.media_id == media_id
+        ).first()
+        return exists is not None

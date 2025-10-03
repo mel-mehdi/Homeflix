@@ -623,6 +623,15 @@
             }
             
             if (heroAddBtn) {
+                // Reset button to default state first
+                heroAddBtn.innerHTML = `
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                `;
+                heroAddBtn.dataset.added = 'false';
+                heroAddBtn.title = 'Add to My List';
+                
                 const newAddBtn = heroAddBtn.cloneNode(true);
                 heroAddBtn.parentNode.replaceChild(newAddBtn, heroAddBtn);
                 newAddBtn.addEventListener('click', function() {
@@ -633,6 +642,15 @@
             }
             
             if (heroLikeBtn) {
+                // Reset like button to default state
+                heroLikeBtn.innerHTML = `
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z" fill="currentColor"/>
+                    </svg>
+                `;
+                heroLikeBtn.dataset.liked = 'false';
+                heroLikeBtn.title = 'I like this';
+                
                 const newLikeBtn = heroLikeBtn.cloneNode(true);
                 heroLikeBtn.parentNode.replaceChild(newLikeBtn, heroLikeBtn);
                 newLikeBtn.addEventListener('click', function() {
@@ -641,6 +659,11 @@
                     }
                 });
             }
+            
+            // Re-initialize My List button states after resetting
+            setTimeout(() => {
+                initializeMyListButtons();
+            }, 100);
         }
 
         // Netflix-style navbar scroll effect
@@ -738,6 +761,11 @@
         // Initialize hero banner on page load
         document.addEventListener('DOMContentLoaded', function() {
             initializeHeroBanner();
+            setupTitleCardInteractions();
+            // Wait a bit for hero banner to be fully set up, then initialize button states
+            setTimeout(() => {
+                initializeMyListButtons();
+            }, 100);
         });
 
         // Search functionality
@@ -826,10 +854,56 @@
             }, 500);
         }
 
-        // Title card interactions
-        document.addEventListener('DOMContentLoaded', function() {
-            setupTitleCardInteractions();
-        });
+        // Title card interactions - function will be called from DOMContentLoaded above
+        
+        // Initialize My List button states
+        async function initializeMyListButtons() {
+            try {
+                const response = await fetch('/api/my-list');
+                const data = await response.json();
+                
+                if (data.success && data.items) {
+                    const myListIds = new Set(data.items.map(item => item.id || item.imdb_id));
+                    
+                    // Update all add buttons
+                    document.querySelectorAll('.title-card').forEach(card => {
+                        const id = card.dataset.id;
+                        const addButton = card.querySelector('.title-card-add-button');
+                        
+                        if (addButton && myListIds.has(id)) {
+                            // Mark as already in list
+                            addButton.innerHTML = `
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor"/>
+                                </svg>
+                            `;
+                            addButton.dataset.added = 'true';
+                            addButton.title = 'Remove from My List';
+                        }
+                    });
+                    
+                    // Also update hero button if it exists
+                    const heroAddBtn = document.getElementById('heroAddBtn');
+                    if (heroAddBtn) {
+                        const heroData = document.querySelector('[data-hero="true"]');
+                        if (heroData) {
+                            const heroId = heroData.dataset.id;
+                            if (myListIds.has(heroId)) {
+                                heroAddBtn.innerHTML = `
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor"/>
+                                    </svg>
+                                `;
+                                heroAddBtn.dataset.added = 'true';
+                                heroAddBtn.title = 'Remove from My List';
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to initialize My List buttons:', error);
+            }
+        }
 
         function setupTitleCardInteractions() {
             const titleCards = document.querySelectorAll('.title-card');
@@ -857,7 +931,15 @@
                     addButton.addEventListener('click', function(e) {
                         e.stopPropagation();
                         const title = card.dataset.title;
-                        addToMyList(title, addButton);
+                        const type = card.dataset.type;
+                        const id = card.dataset.id;
+                        const tmdbId = card.dataset.tmdbId;
+                        
+                        if (typeof homeflixApp !== 'undefined') {
+                            homeflixApp.toggleMyList(type, id, tmdbId, title, addButton);
+                        } else {
+                            console.error('homeflixApp not loaded');
+                        }
                     });
                 }
 
@@ -920,7 +1002,7 @@
                 `;
                 button.dataset.added = 'false';
                 button.style.backgroundColor = 'rgba(42,42,42,0.6)';
-                alert(`"${title}" removed from My List`);
+                homeflixApp.showNotification(`"${title}" removed from My List`, 'info');
             } else {
                 button.innerHTML = `
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -929,7 +1011,7 @@
                 `;
                 button.dataset.added = 'true';
                 button.style.backgroundColor = '#46d369';
-                alert(`"${title}" added to My List`);
+                homeflixApp.showNotification(`"${title}" added to My List`, 'success');
             }
         }
 
@@ -945,7 +1027,7 @@
                 `;
                 button.dataset.liked = 'false';
                 button.style.backgroundColor = 'rgba(42,42,42,0.6)';
-                alert(`You unliked "${title}"`);
+                homeflixApp.showNotification(`You unliked "${title}"`, 'info');
             } else {
                 button.innerHTML = `
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -954,12 +1036,12 @@
                 `;
                 button.dataset.liked = 'true';
                 button.style.backgroundColor = '#e50914';
-                alert(`You liked "${title}"`);
+                homeflixApp.showNotification(`You liked "${title}"`, 'success');
             }
         }
 
         function showTitleInfo(title, type) {
-            alert(`More Info about "${title}":\n\nType: ${type === 'movie' ? 'Movie' : 'TV Series'}\n\nDetailed information will include:\n• Synopsis\n• Cast & Crew\n• Duration/Episodes\n• Genre\n• Release Date\n• Similar Titles\n\nFeature coming soon!`);
+            homeflixApp.showNotification(`More info feature coming soon for "${title}"`, 'info');
         }
 
         // Load more movies
@@ -1130,33 +1212,135 @@
         }
 
         function showMyList() {
-            // Check if My List section exists
-            const myListSection = document.querySelector('#my-list-slider');
+            // Fetch My List items from API
+            fetch('/api/my-list')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('My List data:', data); // Debug log
+                    if (data.success && data.items && data.items.length > 0) {
+                        console.log('Opening modal with', data.items.length, 'items'); // Debug log
+                        openMyListModal(data.items);
+                    } else {
+                        console.log('List is empty or no items'); // Debug log
+                        // No items in My List
+                        homeflixApp.showNotification('Your list is empty! Click the + button on any movie or show to add it to your list.', 'info');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching My List:', error);
+                    homeflixApp.showNotification('Failed to load My List', 'error');
+                });
+        }
+        
+        function openMyListModal(items) {
+            // Create modal overlay
+            const modal = document.createElement('div');
+            modal.className = 'my-list-modal';
+            modal.innerHTML = `
+                <div class="my-list-modal-content">
+                    <div class="my-list-modal-header">
+                        <h2>My List</h2>
+                        <button class="my-list-modal-close" onclick="closeMyListModal()">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="my-list-modal-body">
+                        <div class="my-list-grid">
+                            ${items.map(item => `
+                                <div class="my-list-item" data-type="${item.type}" data-id="${item.id || item.imdb_id}" data-tmdb-id="${item.tmdb_id}">
+                                    <div class="my-list-item-poster">
+                                        ${item.poster_url ? `<img src="${item.poster_url}" alt="${item.title}" loading="lazy">` : `<div class="placeholder-image"><span>${item.title.charAt(0)}</span></div>`}
+                                        <div class="my-list-item-overlay">
+                                            <button class="btn btn-primary" onclick="homeflixApp.playTitle('${item.type}', '${item.id || item.imdb_id}')">
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M8 5v14l11-7z" fill="currentColor"/>
+                                                </svg>
+                                                Play
+                                            </button>
+                                            <button class="btn btn-icon" onclick="removeFromMyListModal('${item.type}', '${item.id || item.imdb_id}', '${item.title}')" title="Remove from My List">
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="my-list-item-info">
+                                        <h3>${item.title}</h3>
+                                        <p class="my-list-item-type">${item.type === 'movie' ? 'Movie' : 'TV Show'}</p>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
             
-            if (myListSection && myListSection.closest('.content-row')) {
-                const section = myListSection.closest('.content-row');
-                
-                // Check if there are items in My List
-                const items = myListSection.querySelectorAll('.title-card');
-                
-                if (items.length > 0) {
-                    // Scroll to My List section
-                    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    
-                    // Highlight the section briefly
-                    section.style.transition = 'background-color 0.5s ease';
-                    section.style.backgroundColor = 'rgba(229, 9, 20, 0.1)';
-                    setTimeout(() => {
-                        section.style.backgroundColor = 'transparent';
-                    }, 1500);
-                } else {
-                    // No items in My List
-                    alert('Your list is empty!\n\nClick the + button on any movie or show to add it to your list.');
+            document.body.appendChild(modal);
+            
+            // Add animation
+            setTimeout(() => {
+                modal.classList.add('active');
+            }, 10);
+            
+            // Close on outside click
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeMyListModal();
                 }
-            } else {
-                // My List section doesn't exist (no items)
-                alert('Your list is empty!\n\nClick the + button on any movie or show to add it to your list.');
+            });
+        }
+        
+        function closeMyListModal() {
+            const modal = document.querySelector('.my-list-modal');
+            if (modal) {
+                modal.classList.remove('active');
+                setTimeout(() => {
+                    modal.remove();
+                }, 300);
             }
+        }
+        
+        function removeFromMyListModal(type, id, title) {
+            fetch('/api/my-list', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'remove',
+                    type: type,
+                    id: id,
+                    title: title
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    homeflixApp.showNotification(`Removed "${title}" from My List`, 'info');
+                    // Remove item from modal
+                    const item = document.querySelector(`.my-list-item[data-id="${id}"]`);
+                    if (item) {
+                        item.style.animation = 'fadeOut 0.3s ease-out';
+                        setTimeout(() => {
+                            item.remove();
+                            // Check if list is empty
+                            const remainingItems = document.querySelectorAll('.my-list-item');
+                            if (remainingItems.length === 0) {
+                                closeMyListModal();
+                                homeflixApp.showNotification('Your list is now empty', 'info');
+                            }
+                        }, 300);
+                    }
+                } else {
+                    homeflixApp.showNotification('Failed to remove from My List', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error removing from My List:', error);
+                homeflixApp.showNotification('Failed to remove from My List', 'error');
+            });
         }
 
         // More Info button functionality
