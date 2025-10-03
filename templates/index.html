@@ -43,6 +43,18 @@
 
     <main class="main-content">
         <section class="hero-banner" {% if backdrop_urls and backdrop_urls|length > 0 %}style="background-image: url('{{ backdrop_urls[0] }}'); background-size: cover; background-position: center;"{% else %}style="background: linear-gradient(77deg, rgba(229,9,20,.8), rgba(0,0,0,.6)), linear-gradient(135deg, #141414 0%, #1a1a1a 50%, #141414 100%);"{% endif %}>
+            <!-- Navigation arrows for hero banner -->
+            <button class="hero-nav-arrow hero-nav-prev" id="heroPrevBtn">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" fill="currentColor"/>
+                </svg>
+            </button>
+            <button class="hero-nav-arrow hero-nav-next" id="heroNextBtn">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" fill="currentColor"/>
+                </svg>
+            </button>
+            
             <!-- Netflix-style mute/unmute button -->
             <button class="hero-sound-toggle" id="heroSoundToggle" style="display: none;">
                 <svg class="sound-on" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -465,17 +477,6 @@
         </section>
     </main>
 
-    <!-- Initialize page data -->
-    <script>
-        // Initialize data from Flask template
-        if (typeof initializePaginationData === 'function') {
-            initializePaginationData({{ movie_page }}, {{ series_page }}, "{{ search_query }}");
-        }
-        if (typeof initializeHeroBannerData === 'function') {
-            initializeHeroBannerData({{ backdrop_urls | tojson }}, {{ series | tojson }});
-        }
-    </script>
-    
     <!-- Homeflix JavaScript Modules -->
     <script src="/static/js/hero-banner.js"></script>
     <script src="/static/js/ui-components.js"></script>
@@ -487,5 +488,16 @@
     
     <!-- Enhanced Netflix-like functionality -->
     <script src="/static/js/netflix.js"></script>
+    
+    <!-- Initialize page data AFTER all JS modules are loaded -->
+    <script>
+        // Initialize data from Flask template
+        if (typeof initializePaginationData === 'function') {
+            initializePaginationData({{ movie_page }}, {{ series_page }}, "{{ search_query }}");
+        }
+        if (typeof initializeHeroBannerData === 'function') {
+            initializeHeroBannerData({{ backdrop_urls | tojson }}, {{ series | tojson }});
+        }
+    </script>
 </body>
 </html>

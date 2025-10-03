@@ -3,7 +3,7 @@
 // Initialize all components on page load
 document.addEventListener('DOMContentLoaded', function() {
     initializeHeroBanner();
-    initializeHeroBannerNavigation();
+    // initializeHeroBannerNavigation(); // This is now called from initializeHeroBannerData() after data is loaded
     setupTitleCardInteractions();
     initializeHeroWatchButton();
     initializeHeroNavigation();

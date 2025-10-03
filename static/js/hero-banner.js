@@ -5,31 +5,64 @@ let heroSeries = [];
 
 // Preload images cache
 const preloadedImages = new Map();
+let allImagesPreloaded = false;
 
 // Preload backdrop images for faster transitions
 function preloadBackdropImages() {
     if (!backdropUrls || backdropUrls.length === 0) return;
+    
+    console.log(`Starting to preload ${backdropUrls.length} backdrop images...`);
+    let loadedCount = 0;
+    
     backdropUrls.forEach((url, index) => {
         const img = new Image();
+        
+        img.onload = () => {
+            loadedCount++;
+            console.log(`Preloaded image ${loadedCount}/${backdropUrls.length}: ${url}`);
+            preloadedImages.set(url, img);
+            
+            if (loadedCount === backdropUrls.length) {
+                allImagesPreloaded = true;
+                console.log('✅ All hero banner images preloaded successfully!');
+            }
+        };
+        
+        img.onerror = () => {
+            console.error(`Failed to preload image: ${url}`);
+            loadedCount++;
+        };
+        
+        // Start loading
         img.src = url;
-        preloadedImages.set(url, img);
     });
 }
 
 // Initialize hero banner data
 function initializeHeroBannerData(backdrops, series) {
+    console.log('Initializing hero banner data...');
+    console.log('Backdrops:', backdrops);
+    console.log('Series:', series);
+    
     backdropUrls = backdrops || [];
     heroSeries = series || [];
+    
+    console.log(`Initialized with ${backdropUrls.length} backdrops and ${heroSeries.length} series`);
     
     // Preload images on page load
     if (backdropUrls && backdropUrls.length > 0) {
         preloadBackdropImages();
     }
 
+    // Initialize navigation arrows now that data is loaded
+    initializeHeroBannerNavigation();
+
     // Change background AND hero content every 8 seconds
     if (backdropUrls && backdropUrls.length > 1 && heroSeries && heroSeries.length > 1) {
+        console.log('Setting up auto-rotation interval');
         setInterval(() => {
             currentBackdropIndex = (currentBackdropIndex + 1) % Math.min(backdropUrls.length, heroSeries.length);
+            console.log(`Auto-rotating to index: ${currentBackdropIndex}`);
             updateHeroContent(currentBackdropIndex);
         }, 8000);
     }
@@ -37,37 +70,61 @@ function initializeHeroBannerData(backdrops, series) {
 
 // Update hero banner content to match the current featured series
 function updateHeroContent(index) {
+    console.log(`updateHeroContent called with index: ${index}`);
+    console.log(`Total backdrops: ${backdropUrls.length}, Total series: ${heroSeries.length}`);
+    
     const heroBanner = document.querySelector('.hero-banner');
     const heroInfo = document.querySelector('.hero-info');
     const series = heroSeries[index];
     
-    if (!heroBanner || !series || !heroInfo) return;
+    if (!heroBanner) {
+        console.error('Hero banner element not found');
+        return;
+    }
     
-    // Add fade-out effect
+    if (!series) {
+        console.error(`Series not found at index ${index}`);
+        return;
+    }
+    
+    if (!heroInfo) {
+        console.error('Hero info element not found');
+        return;
+    }
+    
+    console.log(`Updating hero content to series: ${series.title}`);
+    
+    // Update background FIRST before fading out content
+    if (backdropUrls[index]) {
+        const imageUrl = backdropUrls[index];
+        console.log(`Setting background image to: ${imageUrl}`);
+        const preloadedImg = preloadedImages.get(imageUrl);
+        
+        // Check if image is preloaded and ready
+        if (preloadedImg && preloadedImg.complete && preloadedImg.naturalHeight !== 0) {
+            console.log('✅ Using preloaded image - instant display');
+            // Apply immediately with smooth transition
+            heroBanner.style.transition = 'background-image 0.5s ease-in-out';
+            heroBanner.style.backgroundImage = `url('${imageUrl}')`;
+            heroBanner.style.backgroundSize = 'cover';
+            heroBanner.style.backgroundPosition = 'center';
+        } else {
+            console.log('⚠️ Image not fully preloaded yet, applying anyway');
+            heroBanner.style.transition = 'background-image 0.5s ease-in-out';
+            heroBanner.style.backgroundImage = `url('${imageUrl}')`;
+            heroBanner.style.backgroundSize = 'cover';
+            heroBanner.style.backgroundPosition = 'center';
+        }
+    } else {
+        console.error(`No backdrop URL at index ${index}`);
+    }
+    
+    // Add fade-out effect to content
     heroInfo.style.opacity = '0';
     heroInfo.style.transition = 'opacity 0.3s ease-in-out';
     
     // Wait for fade-out to complete before updating content
     setTimeout(() => {
-        // Update background with preloaded image for instant display
-        if (backdropUrls[index]) {
-            const imageUrl = backdropUrls[index];
-            const preloadedImg = preloadedImages.get(imageUrl);
-            
-            // Check if image is already loaded
-            if (preloadedImg && preloadedImg.complete) {
-                // Image is ready, apply immediately
-                heroBanner.style.backgroundImage = `url('${imageUrl}')`;
-                heroBanner.style.backgroundSize = 'cover';
-                heroBanner.style.backgroundPosition = 'center';
-            } else {
-                // Fallback: set image and wait for it to load
-                heroBanner.style.backgroundImage = `url('${imageUrl}')`;
-                heroBanner.style.backgroundSize = 'cover';
-                heroBanner.style.backgroundPosition = 'center';
-            }
-        }
-        
         // Update maturity rating badge
         const maturityBadge = heroBanner.querySelector('.hero-maturity-badge span');
         if (maturityBadge) {
@@ -143,12 +200,31 @@ function updateHeroContent(index) {
         // Re-initialize hero banner buttons with new data
         reinitializeHeroButtons();
         
-        // Preload next image for even smoother transition
-        const nextIndex = (index + 1) % Math.min(backdropUrls.length, heroSeries.length);
+        // Preload adjacent images for even smoother navigation
+        const maxIndex = Math.min(backdropUrls.length, heroSeries.length);
+        const nextIndex = (index + 1) % maxIndex;
+        const prevIndex = (index - 1 + maxIndex) % maxIndex;
+        
+        // Preload next image
         if (backdropUrls[nextIndex] && !preloadedImages.has(backdropUrls[nextIndex])) {
+            console.log(`Preloading next image at index ${nextIndex}`);
             const nextImg = new Image();
+            nextImg.onload = () => {
+                preloadedImages.set(backdropUrls[nextIndex], nextImg);
+                console.log(`✅ Next image preloaded: ${backdropUrls[nextIndex]}`);
+            };
             nextImg.src = backdropUrls[nextIndex];
-            preloadedImages.set(backdropUrls[nextIndex], nextImg);
+        }
+        
+        // Preload previous image
+        if (backdropUrls[prevIndex] && !preloadedImages.has(backdropUrls[prevIndex])) {
+            console.log(`Preloading previous image at index ${prevIndex}`);
+            const prevImg = new Image();
+            prevImg.onload = () => {
+                preloadedImages.set(backdropUrls[prevIndex], prevImg);
+                console.log(`✅ Previous image preloaded: ${backdropUrls[prevIndex]}`);
+            };
+            prevImg.src = backdropUrls[prevIndex];
         }
         
         // Fade content back in
@@ -325,15 +401,21 @@ function initializeHeroBannerNavigation() {
     const heroNextBtn = document.getElementById('heroNextBtn');
     
     if (!heroPrevBtn || !heroNextBtn) {
+        console.log('Hero navigation buttons not found');
         return;
     }
     
     // Check if we have enough data for navigation
     if (!backdropUrls || !heroSeries || backdropUrls.length <= 1 || heroSeries.length <= 1) {
-        heroPrevBtn.style.display = 'none';
-        heroNextBtn.style.display = 'none';
+        console.log('Not enough hero data for navigation - buttons will remain hidden');
+        // Don't set visibility or display, let CSS opacity handle it
+        // Just keep them disabled so they can't be clicked
+        heroPrevBtn.disabled = true;
+        heroNextBtn.disabled = true;
         return;
     }
+    
+    console.log(`Hero navigation initialized with ${backdropUrls.length} backdrops and ${heroSeries.length} series`);
     
     // Update button states based on current index
     const updateNavButtons = function() {
@@ -342,23 +424,15 @@ function initializeHeroBannerNavigation() {
         // Update prev button
         if (currentBackdropIndex === 0) {
             heroPrevBtn.disabled = true;
-            heroPrevBtn.style.opacity = '0.3';
-            heroPrevBtn.style.cursor = 'not-allowed';
         } else {
             heroPrevBtn.disabled = false;
-            heroPrevBtn.style.opacity = '';
-            heroPrevBtn.style.cursor = 'pointer';
         }
         
         // Update next button
         if (currentBackdropIndex === maxIndex) {
             heroNextBtn.disabled = true;
-            heroNextBtn.style.opacity = '0.3';
-            heroNextBtn.style.cursor = 'not-allowed';
         } else {
             heroNextBtn.disabled = false;
-            heroNextBtn.style.opacity = '';
-            heroNextBtn.style.cursor = 'pointer';
         }
     };
     
@@ -367,12 +441,15 @@ function initializeHeroBannerNavigation() {
         e.preventDefault();
         e.stopPropagation();
         
+        console.log(`Prev button clicked. Current index: ${currentBackdropIndex}`);
+        
         if (currentBackdropIndex > 0 && !heroPrevBtn.disabled) {
             // Add flash effect
             heroPrevBtn.classList.add('flash');
             setTimeout(() => heroPrevBtn.classList.remove('flash'), 500);
             
             currentBackdropIndex--;
+            console.log(`Navigating to previous. New index: ${currentBackdropIndex}`);
             updateHeroContent(currentBackdropIndex);
             updateNavButtons();
         }
@@ -383,6 +460,8 @@ function initializeHeroBannerNavigation() {
         e.preventDefault();
         e.stopPropagation();
         const maxIndex = Math.min(backdropUrls.length, heroSeries.length) - 1;
+        
+        console.log(`Next button clicked. Current index: ${currentBackdropIndex}, Max index: ${maxIndex}`);
      
         if (currentBackdropIndex < maxIndex && !heroNextBtn.disabled) {
             // Add flash effect
@@ -390,6 +469,7 @@ function initializeHeroBannerNavigation() {
             setTimeout(() => heroNextBtn.classList.remove('flash'), 500);
             
             currentBackdropIndex++;
+            console.log(`Navigating to next. New index: ${currentBackdropIndex}`);
             updateHeroContent(currentBackdropIndex);
             updateNavButtons();
         }
@@ -397,13 +477,6 @@ function initializeHeroBannerNavigation() {
     
     // Initial button state
     updateNavButtons();
-    
-    // Also update buttons after auto-rotation
-    const originalUpdateHeroContent = window.updateHeroContent;
-    window.updateHeroContent = function(index) {
-        originalUpdateHeroContent(index);
-        updateNavButtons();
-    };
 }
 
 // Toggle hero expanded synopsis
