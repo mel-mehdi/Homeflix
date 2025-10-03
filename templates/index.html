@@ -583,7 +583,7 @@
         }
         
         // Reinitialize hero buttons after content update
-        function reinitializeHeroButtons() {
+        async function reinitializeHeroButtons() {
             const heroPlayBtn = document.getElementById('heroPlayBtn');
             const heroAddBtn = document.getElementById('heroAddBtn');
             const heroLikeBtn = document.getElementById('heroLikeBtn');
@@ -610,6 +610,12 @@
             }
             
             if (heroAddBtn) {
+                // Reset button to default state first
+                heroAddBtn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor"/></svg>';
+                heroAddBtn.dataset.added = 'false';
+                heroAddBtn.title = 'Add to My List';
+                heroAddBtn.style.backgroundColor = '';
+                
                 const newAddBtn = heroAddBtn.cloneNode(true);
                 heroAddBtn.parentNode.replaceChild(newAddBtn, heroAddBtn);
                 newAddBtn.addEventListener('click', function() {
@@ -617,9 +623,31 @@
                         homeflixApp.toggleMyList(type, id, tmdbId, title, newAddBtn);
                     }
                 });
+                
+                // Check if this item is in My List and update button state
+                try {
+                    const response = await fetch('/api/my-list');
+                    const data = await response.json();
+                    if (data.success && data.items) {
+                        const isInList = data.items.some(item => (item.id || item.imdb_id) === id);
+                        if (isInList) {
+                            newAddBtn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor"/></svg>';
+                            newAddBtn.dataset.added = 'true';
+                            newAddBtn.title = 'Remove from My List';
+                        }
+                    }
+                } catch (error) {
+                    console.error('Failed to check My List status:', error);
+                }
             }
             
             if (heroLikeBtn) {
+                // Reset button to default state first
+                heroLikeBtn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z" fill="currentColor"/></svg>';
+                heroLikeBtn.dataset.liked = 'false';
+                heroLikeBtn.title = 'Rate';
+                heroLikeBtn.style.backgroundColor = '';
+                
                 const newLikeBtn = heroLikeBtn.cloneNode(true);
                 heroLikeBtn.parentNode.replaceChild(newLikeBtn, heroLikeBtn);
                 newLikeBtn.addEventListener('click', function() {
