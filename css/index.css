@@ -316,11 +316,74 @@ body {
     display: none;
     margin-top: 2vw;
     max-width: 600px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 2vw;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .hero-banner.expanded .hero-expanded-info {
     display: block;
 }
+
+.hero-synopsis-full {
+    margin-bottom: 1.5vw;
+    position: relative;
+}
+
+.hero-synopsis-full p {
+    color: #e5e5e5;
+    font-size: 1vw;
+    line-height: 1.6;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-height: 4.8vw;
+}
+
+.hero-synopsis-full.expanded p {
+    display: block;
+    -webkit-line-clamp: unset;
+    max-height: none;
+}
+
+.hero-show-more-btn {
+    margin-top: 1vw;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    padding: 8px 24px;
+    font-size: 0.9vw;
+    font-weight: 600;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hero-show-more-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: #fff;
+    transform: scale(1.05);
+}
+
+.hero-show-more-btn svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.3s ease;
+}
+
+.hero-synopsis-full.expanded .hero-show-more-btn svg {
+    transform: rotate(180deg);
+}
+
 
 .hero-meta {
     display: flex;
@@ -586,6 +649,17 @@ body {
         font-size: 2.5vw;
     }
     
+    .hero-synopsis-full p {
+        font-size: 1.5vw;
+        max-height: 7.2vw;
+    }
+    
+    .hero-show-more-btn {
+        font-size: 1.2vw;
+        padding: 6px 16px;
+    }
+    
+
     .btn {
         font-size: 2vw;
         min-height: 36px;
@@ -630,6 +704,22 @@ body {
         font-size: 3.5vw;
         margin-bottom: 4vw;
     }
+    
+    .hero-expanded-info {
+        max-width: 90%;
+        padding: 3vw;
+    }
+    
+    .hero-synopsis-full p {
+        font-size: 2.5vw;
+        max-height: 12vw;
+    }
+    
+    .hero-show-more-btn {
+        font-size: 2vw;
+        padding: 8px 16px;
+    }
+
     
     .btn {
         font-size: 3vw;
