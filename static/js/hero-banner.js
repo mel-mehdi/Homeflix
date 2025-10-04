@@ -2,6 +2,7 @@
 let currentBackdropIndex = 0;
 let backdropUrls = [];
 let heroSeries = [];
+let autoRotationInterval = null; // Store the interval ID
 
 // Preload images cache
 const preloadedImages = new Map();
@@ -57,13 +58,27 @@ function initializeHeroBannerData(backdrops, series) {
     // Initialize navigation arrows now that data is loaded
     initializeHeroBannerNavigation();
 
-    // Change background AND hero content every 8 seconds
+    // Start auto-rotation
+    startAutoRotation();
+}
+
+// Start or restart auto-rotation
+function startAutoRotation() {
+    // Clear existing interval if any
+    if (autoRotationInterval) {
+        clearInterval(autoRotationInterval);
+        console.log('Cleared existing auto-rotation interval');
+    }
+    
+    // Only start if we have enough data
     if (backdropUrls && backdropUrls.length > 1 && heroSeries && heroSeries.length > 1) {
-        console.log('Setting up auto-rotation interval');
-        setInterval(() => {
+        console.log('Starting auto-rotation interval (8 seconds)');
+        autoRotationInterval = setInterval(() => {
             currentBackdropIndex = (currentBackdropIndex + 1) % Math.min(backdropUrls.length, heroSeries.length);
             console.log(`Auto-rotating to index: ${currentBackdropIndex}`);
             updateHeroContent(currentBackdropIndex);
+            // Update navigation button states after auto-rotation
+            updateHeroNavigationButtons();
         }, 8000);
     }
 }
@@ -409,32 +424,15 @@ function initializeHeroBannerNavigation() {
     if (!backdropUrls || !heroSeries || backdropUrls.length <= 1 || heroSeries.length <= 1) {
         console.log('Not enough hero data for navigation - buttons will remain hidden');
         // Don't set visibility or display, let CSS opacity handle it
-        // Just keep them disabled so they can't be clicked
-        heroPrevBtn.disabled = true;
-        heroNextBtn.disabled = true;
+        // Just add inactive class so they can't be clicked
+        heroPrevBtn.classList.add('inactive');
+        heroNextBtn.classList.add('inactive');
+        heroPrevBtn.setAttribute('aria-disabled', 'true');
+        heroNextBtn.setAttribute('aria-disabled', 'true');
         return;
     }
     
     console.log(`Hero navigation initialized with ${backdropUrls.length} backdrops and ${heroSeries.length} series`);
-    
-    // Update button states based on current index
-    const updateNavButtons = function() {
-        const maxIndex = Math.min(backdropUrls.length, heroSeries.length) - 1;
-
-        // Update prev button
-        if (currentBackdropIndex === 0) {
-            heroPrevBtn.disabled = true;
-        } else {
-            heroPrevBtn.disabled = false;
-        }
-        
-        // Update next button
-        if (currentBackdropIndex === maxIndex) {
-            heroNextBtn.disabled = true;
-        } else {
-            heroNextBtn.disabled = false;
-        }
-    };
     
     // Navigate to previous hero
     heroPrevBtn.addEventListener('click', function(e) {
@@ -443,7 +441,8 @@ function initializeHeroBannerNavigation() {
         
         console.log(`Prev button clicked. Current index: ${currentBackdropIndex}`);
         
-        if (currentBackdropIndex > 0 && !heroPrevBtn.disabled) {
+        // Check if we can navigate (don't use disabled property)
+        if (currentBackdropIndex > 0 && !heroPrevBtn.classList.contains('inactive')) {
             // Add flash effect
             heroPrevBtn.classList.add('flash');
             setTimeout(() => heroPrevBtn.classList.remove('flash'), 500);
@@ -451,7 +450,10 @@ function initializeHeroBannerNavigation() {
             currentBackdropIndex--;
             console.log(`Navigating to previous. New index: ${currentBackdropIndex}`);
             updateHeroContent(currentBackdropIndex);
-            updateNavButtons();
+            updateHeroNavigationButtons();
+            
+            // Restart auto-rotation timer
+            startAutoRotation();
         }
     });
     
@@ -463,7 +465,8 @@ function initializeHeroBannerNavigation() {
         
         console.log(`Next button clicked. Current index: ${currentBackdropIndex}, Max index: ${maxIndex}`);
      
-        if (currentBackdropIndex < maxIndex && !heroNextBtn.disabled) {
+        // Check if we can navigate (don't use disabled property)
+        if (currentBackdropIndex < maxIndex && !heroNextBtn.classList.contains('inactive')) {
             // Add flash effect
             heroNextBtn.classList.add('flash');
             setTimeout(() => heroNextBtn.classList.remove('flash'), 500);
@@ -471,12 +474,47 @@ function initializeHeroBannerNavigation() {
             currentBackdropIndex++;
             console.log(`Navigating to next. New index: ${currentBackdropIndex}`);
             updateHeroContent(currentBackdropIndex);
-            updateNavButtons();
+            updateHeroNavigationButtons();
+            
+            // Restart auto-rotation timer
+            startAutoRotation();
         }
     });
     
     // Initial button state
-    updateNavButtons();
+    updateHeroNavigationButtons();
+}
+
+// Update hero navigation button states (global function)
+function updateHeroNavigationButtons() {
+    const heroPrevBtn = document.getElementById('heroPrevBtn');
+    const heroNextBtn = document.getElementById('heroNextBtn');
+    
+    if (!heroPrevBtn || !heroNextBtn) {
+        return;
+    }
+    
+    const maxIndex = Math.min(backdropUrls.length, heroSeries.length) - 1;
+    
+    console.log(`Updating nav buttons: currentIndex=${currentBackdropIndex}, maxIndex=${maxIndex}`);
+
+    // Update prev button - use CSS class instead of disabled attribute
+    if (currentBackdropIndex === 0) {
+        heroPrevBtn.classList.add('inactive');
+        heroPrevBtn.setAttribute('aria-disabled', 'true');
+    } else {
+        heroPrevBtn.classList.remove('inactive');
+        heroPrevBtn.setAttribute('aria-disabled', 'false');
+    }
+    
+    // Update next button - use CSS class instead of disabled attribute
+    if (currentBackdropIndex === maxIndex) {
+        heroNextBtn.classList.add('inactive');
+        heroNextBtn.setAttribute('aria-disabled', 'true');
+    } else {
+        heroNextBtn.classList.remove('inactive');
+        heroNextBtn.setAttribute('aria-disabled', 'false');
+    }
 }
 
 // Toggle hero expanded synopsis
