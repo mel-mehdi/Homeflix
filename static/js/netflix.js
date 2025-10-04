@@ -11,8 +11,8 @@ const homeflixApp = {
             // For TV series, go to series details page to see seasons and episodes
             window.location.href = `/series/${id}`;
         } else if (type === 'movie') {
-            // For movies, go to watch/movie route
-            window.location.href = `/watch/movie/${id}`;
+            // For movies, go to movie details page (same as series)
+            window.location.href = `/movie/${id}`;
         } else {
             console.error('Unknown type:', type);
         }

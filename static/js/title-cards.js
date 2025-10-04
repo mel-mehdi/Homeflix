@@ -11,9 +11,11 @@ function setupTitleCardInteractions() {
                 e.stopPropagation();
                 const type = card.dataset.type;
                 const id = card.dataset.id;
-                // For series, go to details page, for movies play directly
+                // For both series and movies, go to details page first
                 if (type === 'series') {
                     window.location.href = `/series/${id}`;
+                } else if (type === 'movie') {
+                    window.location.href = `/movie/${id}`;
                 } else {
                     window.location.href = `/watch/${type}/${id}`;
                 }
@@ -55,9 +57,11 @@ function setupTitleCardInteractions() {
         card.addEventListener('click', function() {
             const type = card.dataset.type;
             const id = card.dataset.id;
-            // For series, go to details page first
+            // For both series and movies, go to details page first
             if (type === 'series') {
                 window.location.href = `/series/${id}`;
+            } else if (type === 'movie') {
+                window.location.href = `/movie/${id}`;
             } else {
                 window.location.href = `/watch/${type}/${id}`;
             }

@@ -317,6 +317,62 @@ def series_details(imdb_id):
         logger.error(f" in series_details: {e}")
         return f"Error: {e}", 500
 
+@app.route('/movie/<imdb_id>')
+def movie_details(imdb_id):
+    """Display movie details page"""
+    try:
+        # Fetch movie details from database first
+        with DatabaseService() as db_service:
+            movie = db_service.get_movie_by_imdb_id(imdb_id)
+        
+        if not movie:
+            return "Movie not found", 404
+        
+        movie_dict = movie.to_dict()
+        tmdb_id = movie.tmdb_id
+        
+        # Fetch detailed information from TMDB
+        if tmdb_id:
+            # Get full movie details
+            url = f"{TMDB_BASE_URL}/movie/{tmdb_id}"
+            headers = {'Authorization': f'Bearer {TMDB_ACCESS_TOKEN}'}
+            movie_data = get_cached_tmdb_data(url, headers)
+            
+            # Get cast information
+            credits_url = f"{TMDB_BASE_URL}/movie/{tmdb_id}/credits"
+            credits_data = get_cached_tmdb_data(credits_url, headers)
+            cast = credits_data.get('cast', [])[:10]  # Top 10 cast members
+            crew = credits_data.get('crew', [])
+            
+            # Get director
+            director = next((person for person in crew if person.get('job') == 'Director'), None)
+            
+            # Get content rating
+            releases_url = f"{TMDB_BASE_URL}/movie/{tmdb_id}/release_dates"
+            releases_data = get_cached_tmdb_data(releases_url, headers)
+            rating = 'NR'  # default
+            for country in releases_data.get('results', []):
+                if country.get('iso_3166_1') == 'US':
+                    release_dates = country.get('release_dates', [])
+                    if release_dates:
+                        rating = release_dates[0].get('certification', 'NR')
+                    break
+            
+            # Update movie dict with additional info
+            movie_dict['rating'] = rating
+            movie_dict['cast'] = cast
+            movie_dict['director'] = director
+            movie_dict['genres'] = movie_data.get('genres', [])
+            movie_dict['runtime'] = movie_data.get('runtime', 0)
+            movie_dict['tagline'] = movie_data.get('tagline', '')
+            movie_dict['budget'] = movie_data.get('budget', 0)
+            movie_dict['revenue'] = movie_data.get('revenue', 0)
+        
+        return render_template('movie_details.html', movie=movie_dict, imdb_id=imdb_id)
+    except Exception as e:
+        logger.error(f"Error in movie_details: {e}")
+        return f"Error: {e}", 500
+
 @app.route('/series/<imdb_id>/season/<int:season_number>')
 def season_episodes(imdb_id, season_number):
     """Display episodes for a specific season"""
