@@ -1,63 +1,17 @@
 // Title Card Interactions
 
 function setupTitleCardInteractions() {
-    const titleCards = document.querySelectorAll('.title-card');
-    
-    titleCards.forEach(card => {
+    // Use event delegation to handle clicks on dynamically added cards
+    document.body.addEventListener('click', function(e) {
+        // Find the closest title card
+        const card = e.target.closest('.title-card');
+        if (!card) return;
+
         // Play button click
-        const playButton = card.querySelector('.title-card-play-button');
-        if (playButton) {
-            playButton.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const type = card.dataset.type;
-                const id = card.dataset.id;
-                // For both series and movies, go to details page first
-                if (type === 'series') {
-                    window.location.href = `/series/${id}`;
-                } else if (type === 'movie') {
-                    window.location.href = `/movie/${id}`;
-                } else {
-                    window.location.href = `/watch/${type}/${id}`;
-                }
-            });
-        }
-
-        // Add to List button
-        const addButton = card.querySelector('.title-card-add-button');
-        if (addButton) {
-            addButton.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const title = card.dataset.title;
-                addToMyList(title, addButton);
-            });
-        }
-
-        // Like button
-        const likeButton = card.querySelector('.title-card-like-button');
-        if (likeButton) {
-            likeButton.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const title = card.dataset.title;
-                toggleLike(title, likeButton);
-            });
-        }
-
-        // More info button
-        const expandButton = card.querySelector('.title-card-expand-button');
-        if (expandButton) {
-            expandButton.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const title = card.dataset.title;
-                const type = card.dataset.type;
-                showTitleInfo(title, type);
-            });
-        }
-
-        // Card click
-        card.addEventListener('click', function() {
+        if (e.target.closest('.title-card-play-button')) {
+            e.stopPropagation();
             const type = card.dataset.type;
             const id = card.dataset.id;
-            // For both series and movies, go to details page first
             if (type === 'series') {
                 window.location.href = `/series/${id}`;
             } else if (type === 'movie') {
@@ -65,19 +19,64 @@ function setupTitleCardInteractions() {
             } else {
                 window.location.href = `/watch/${type}/${id}`;
             }
-        });
+            return;
+        }
 
-        // Hover effects
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'scale(1.05)';
-            this.style.zIndex = '10';
-        });
+        // Add to List button
+        if (e.target.closest('.title-card-add-button')) {
+            e.stopPropagation();
+            const addButton = e.target.closest('.title-card-add-button');
+            const title = card.dataset.title;
+            addToMyList(title, addButton);
+            return;
+        }
 
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'scale(1)';
-            this.style.zIndex = '1';
-        });
+        // Like button
+        if (e.target.closest('.title-card-like-button')) {
+            e.stopPropagation();
+            const likeButton = e.target.closest('.title-card-like-button');
+            const title = card.dataset.title;
+            toggleLike(title, likeButton);
+            return;
+        }
+
+        // More info button
+        if (e.target.closest('.title-card-expand-button')) {
+            e.stopPropagation();
+            const title = card.dataset.title;
+            const type = card.dataset.type;
+            showTitleInfo(title, type);
+            return;
+        }
+
+        // Card click (if not clicking any button)
+        if (!e.target.closest('.title-card-play-button, .title-card-add-button, .title-card-like-button, .title-card-expand-button')) {
+            const type = card.dataset.type;
+            const id = card.dataset.id;
+            if (type === 'series') {
+                window.location.href = `/series/${id}`;
+            } else if (type === 'movie') {
+                window.location.href = `/movie/${id}`;
+            }
+        }
     });
+
+    // Hover effects using event delegation
+    document.body.addEventListener('mouseenter', function(e) {
+        const card = e.target.closest('.title-card');
+        if (card) {
+            card.style.transform = 'scale(1.05)';
+            card.style.zIndex = '10';
+        }
+    }, true);
+
+    document.body.addEventListener('mouseleave', function(e) {
+        const card = e.target.closest('.title-card');
+        if (card) {
+            card.style.transform = 'scale(1)';
+            card.style.zIndex = '1';
+        }
+    }, true);
 }
 
 // Button functionality functions
