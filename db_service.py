@@ -142,6 +142,14 @@ class DatabaseService:
         """Get total number of TV shows"""
         return self.db.query(TVShow).count()
     
+    def movie_exists(self, imdb_id):
+        """Check if a movie exists in the database"""
+        return self.db.query(Movie).filter(Movie.imdb_id == imdb_id).first() is not None
+    
+    def tvshow_exists(self, imdb_id):
+        """Check if a TV show exists in the database"""
+        return self.db.query(TVShow).filter(TVShow.imdb_id == imdb_id).first() is not None
+    
     def clear_trending_flags(self, media_type='all'):
         """Clear trending flags for media"""
         if media_type in ['movie', 'all']:

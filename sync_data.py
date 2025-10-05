@@ -35,32 +35,65 @@ def fetch_and_store_vidsrc_movies(max_pages=5):
     """Fetch movies from VidSrc and store in database (parallel API fetch, sequential DB write)"""
     print("📽️  Fetching movies from VidSrc...")
     
-    # Fetch all pages in parallel (fast API calls)
+    # Fetch all pages in parallel with limited workers to avoid rate limiting
     all_movies = []
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        page_futures = {executor.submit(fetch_vidsrc_page, page, 'movies'): page for page in range(1, max_pages + 1)}
-        for future in as_completed(page_futures):
-            try:
-                movies = future.result()
-                if movies:
-                    all_movies.extend(movies)
-            except Exception as e:
-                print(f"   ❌ Error processing page: {e}")
+    batch_size = 20  # Process 20 pages at a time to avoid overwhelming the server
     
-    # Fetch TMDB details in parallel (fast API calls)
-    print(f"   Processing {len(all_movies)} movies...")
+    for batch_start in range(1, max_pages + 1, batch_size):
+        batch_end = min(batch_start + batch_size, max_pages + 1)
+        print(f"   Fetching pages {batch_start} to {batch_end - 1}...")
+        
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            page_futures = {executor.submit(fetch_vidsrc_page, page, 'movies'): page for page in range(batch_start, batch_end)}
+            for future in as_completed(page_futures):
+                try:
+                    movies = future.result()
+                    if movies:
+                        all_movies.extend(movies)
+                    elif not movies and page_futures[future] > 100:
+                        # If we get empty results after page 100, we've likely reached the end
+                        print(f"   Reached end of available content at page {page_futures[future]}")
+                        break
+                except Exception as e:
+                    print(f"   ❌ Error processing page: {e}")
+        
+        # Small delay between batches to avoid rate limiting
+        if batch_end <= max_pages:
+            time.sleep(2)
+    
+    # Check which movies are new (not in database)
+    print(f"   Checking which of {len(all_movies)} movies are new...")
+    new_movies = []
+    with DatabaseService() as db_service:
+        for movie in all_movies:
+            imdb_id = movie.get('imdb_id')
+            if imdb_id and not db_service.movie_exists(imdb_id):
+                new_movies.append(movie)
+    
+    print(f"   Found {len(new_movies)} new movies to add (skipping {len(all_movies) - len(new_movies)} existing)")
+    
+    # Fetch TMDB details only for new movies
     movie_data_list = []
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        movie_futures = {executor.submit(get_movie_details_from_tmdb, movie.get('imdb_id')): movie for movie in all_movies if movie.get('imdb_id')}
-        for future in as_completed(movie_futures):
-            try:
-                movie_data = future.result()
-                if movie_data:
-                    original_movie = movie_futures[future]
-                    movie_data['quality'] = original_movie.get('quality', 'HD')
-                    movie_data_list.append(movie_data)
-            except Exception as e:
-                pass
+    processed = 0
+    
+    # Process in batches to avoid overwhelming the system
+    batch_size = 100
+    for i in range(0, len(new_movies), batch_size):
+        batch = new_movies[i:i+batch_size]
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            movie_futures = {executor.submit(get_movie_details_from_tmdb, movie.get('imdb_id')): movie for movie in batch if movie.get('imdb_id')}
+            for future in as_completed(movie_futures):
+                try:
+                    movie_data = future.result()
+                    if movie_data:
+                        original_movie = movie_futures[future]
+                        movie_data['quality'] = original_movie.get('quality', 'HD')
+                        movie_data_list.append(movie_data)
+                    processed += 1
+                    if processed % 100 == 0:
+                        print(f"   Processed {processed}/{len(new_movies)} new movies from TMDB...")
+                except Exception as e:
+                    pass
     
     # Write to database sequentially (thread-safe)
     count = 0
@@ -69,54 +102,109 @@ def fetch_and_store_vidsrc_movies(max_pages=5):
             try:
                 db_service.create_or_update_movie(movie_data)
                 count += 1
-                print(f"   ✅ [{count}] Saved: {movie_data['title']}")
+                if count % 50 == 0:
+                    print(f"   ✅ Saved {count} movies...")
             except Exception as e:
                 print(f"   ❌ Error saving {movie_data.get('title', 'Unknown')}: {e}")
     
     print(f"✅ Movies sync completed! Total: {count}")
 
-def fetch_vidsrc_page(page, media_type):
-    """Fetch a single page from VidSrc"""
-    try:
-        url = f"https://vidsrc.xyz/{media_type}/latest/page-{page}.json"
-        response = session.get(url, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        results = data.get('result', [])
-        print(f"   Page {page}: Found {len(results)} items")
-        return results
-    except Exception as e:
-        print(f"   ❌ Error on page {page}: {e}")
-        return []
+def fetch_vidsrc_page(page, media_type, retry=3):
+    """Fetch a single page from VidSrc with retry logic"""
+    for attempt in range(retry):
+        try:
+            url = f"https://vidsrc.xyz/{media_type}/latest/page-{page}.json"
+            response = session.get(url, timeout=15)
+            response.raise_for_status()
+            data = response.json()
+            results = data.get('result', [])
+            if results:
+                print(f"   Page {page}: Found {len(results)} items")
+                return results
+            else:
+                # Empty page means we've reached the end
+                return []
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 503 and attempt < retry - 1:
+                # Rate limited, wait and retry
+                wait_time = (attempt + 1) * 2
+                time.sleep(wait_time)
+                continue
+            elif e.response.status_code == 404:
+                # Page doesn't exist, we've reached the end
+                return []
+            else:
+                print(f"   ❌ Error on page {page}: {e}")
+                return []
+        except Exception as e:
+            if attempt < retry - 1:
+                time.sleep(1)
+                continue
+            print(f"   ❌ Error on page {page}: {e}")
+            return []
+    return []
 
 def fetch_and_store_vidsrc_tvshows(max_pages=5):
     """Fetch TV shows from VidSrc and store in database (parallel API fetch, sequential DB write)"""
     print("📺 Fetching TV shows from VidSrc...")
     
-    # Fetch all pages in parallel (fast API calls)
+    # Fetch all pages in parallel with limited workers to avoid rate limiting
     all_tvshows = []
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        page_futures = {executor.submit(fetch_vidsrc_page, page, 'tvshows'): page for page in range(1, max_pages + 1)}
-        for future in as_completed(page_futures):
-            try:
-                tvshows = future.result()
-                if tvshows:
-                    all_tvshows.extend(tvshows)
-            except Exception as e:
-                print(f"   ❌ Error processing page: {e}")
+    batch_size = 20  # Process 20 pages at a time to avoid overwhelming the server
     
-    # Fetch TMDB details in parallel (fast API calls)
-    print(f"   Processing {len(all_tvshows)} TV shows...")
+    for batch_start in range(1, max_pages + 1, batch_size):
+        batch_end = min(batch_start + batch_size, max_pages + 1)
+        print(f"   Fetching pages {batch_start} to {batch_end - 1}...")
+        
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            page_futures = {executor.submit(fetch_vidsrc_page, page, 'tvshows'): page for page in range(batch_start, batch_end)}
+            for future in as_completed(page_futures):
+                try:
+                    tvshows = future.result()
+                    if tvshows:
+                        all_tvshows.extend(tvshows)
+                    elif not tvshows and page_futures[future] > 100:
+                        # If we get empty results after page 100, we've likely reached the end
+                        print(f"   Reached end of available content at page {page_futures[future]}")
+                        break
+                except Exception as e:
+                    print(f"   ❌ Error processing page: {e}")
+        
+        # Small delay between batches to avoid rate limiting
+        if batch_end <= max_pages:
+            time.sleep(2)
+    
+    # Check which TV shows are new (not in database)
+    print(f"   Checking which of {len(all_tvshows)} TV shows are new...")
+    new_tvshows = []
+    with DatabaseService() as db_service:
+        for show in all_tvshows:
+            imdb_id = show.get('imdb_id')
+            if imdb_id and not db_service.tvshow_exists(imdb_id):
+                new_tvshows.append(show)
+    
+    print(f"   Found {len(new_tvshows)} new TV shows to add (skipping {len(all_tvshows) - len(new_tvshows)} existing)")
+    
+    # Fetch TMDB details only for new TV shows
     tvshow_data_list = []
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        tvshow_futures = {executor.submit(get_tvshow_details_from_tmdb, show.get('imdb_id')): show for show in all_tvshows if show.get('imdb_id')}
-        for future in as_completed(tvshow_futures):
-            try:
-                tvshow_data = future.result()
-                if tvshow_data:
-                    tvshow_data_list.append(tvshow_data)
-            except Exception as e:
-                pass
+    processed = 0
+    
+    # Process in batches to avoid overwhelming the system
+    batch_size = 100
+    for i in range(0, len(new_tvshows), batch_size):
+        batch = new_tvshows[i:i+batch_size]
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            tvshow_futures = {executor.submit(get_tvshow_details_from_tmdb, show.get('imdb_id')): show for show in batch if show.get('imdb_id')}
+            for future in as_completed(tvshow_futures):
+                try:
+                    tvshow_data = future.result()
+                    if tvshow_data:
+                        tvshow_data_list.append(tvshow_data)
+                    processed += 1
+                    if processed % 100 == 0:
+                        print(f"   Processed {processed}/{len(new_tvshows)} new TV shows from TMDB...")
+                except Exception as e:
+                    pass
     
     # Write to database sequentially (thread-safe)
     count = 0
@@ -125,7 +213,8 @@ def fetch_and_store_vidsrc_tvshows(max_pages=5):
             try:
                 db_service.create_or_update_tvshow(tvshow_data)
                 count += 1
-                print(f"   ✅ [{count}] Saved: {tvshow_data['title']}")
+                if count % 50 == 0:
+                    print(f"   ✅ Saved {count} TV shows...")
             except Exception as e:
                 print(f"   ❌ Error saving {tvshow_data.get('title', 'Unknown')}: {e}")
     
@@ -498,9 +587,9 @@ if __name__ == '__main__':
     import argparse
     
     parser = argparse.ArgumentParser(description='Sync media data to database')
-    parser.add_argument('--movie-pages', type=int, default=50, help='Number of movie pages to fetch (50 items per page)')
-    parser.add_argument('--tv-pages', type=int, default=50, help='Number of TV show pages to fetch (50 items per page)')
-    parser.add_argument('--trending-pages', type=int, default=50, help='Number of trending pages to fetch (20 items per page)')
+    parser.add_argument('--movie-pages', type=int, default=500, help='Number of movie pages to fetch (50 items per page)')
+    parser.add_argument('--tv-pages', type=int, default=500, help='Number of TV show pages to fetch (50 items per page)')
+    parser.add_argument('--trending-pages', type=int, default=1, help='Number of trending pages to fetch (20 items per page)')
     
     args = parser.parse_args()
     
