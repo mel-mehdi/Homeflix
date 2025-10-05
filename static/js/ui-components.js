@@ -94,69 +94,12 @@ function initializeHeroNavigation() {
     const trendingSeriesSlider = document.getElementById('trending-series-slider');
     const seriesSlider = document.getElementById('series-slider');
 
-    // Initialize sliders if they exist (for drag functionality only)
-    if (continueWatchingSlider) {
-        initializeSlider(continueWatchingSlider);
-    }
-    if (trendingMoviesSlider) {
-        initializeSlider(trendingMoviesSlider);
-    }
-    if (myListSlider) {
-        initializeSlider(myListSlider);
-    }
-    if (moviesSlider) {
-        initializeSlider(moviesSlider);
-    }
-    if (trendingSeriesSlider) {
-        initializeSlider(trendingSeriesSlider);
-    }
-    if (seriesSlider) {
-        initializeSlider(seriesSlider);
-    }
+    // Initialize sliders if they exist (no need for drag or arrow functionality)
+    // The grid layout handles everything automatically
 }
 
-// Initialize slider functionality
+// Initialize slider functionality - simplified for grid layout
 function initializeSlider(slider) {
-    const titleCards = slider.querySelectorAll('.title-card');
-    
-    // Check if there are any title cards
-    if (!titleCards || titleCards.length === 0) {
-        return; // Exit early if no cards
-    }
-    
-    const cardWidth = titleCards[0].offsetWidth;
-    const gap = parseInt(getComputedStyle(slider).gap) || 0;
-    const totalWidth = Array.from(titleCards).reduce((total, card) => total + card.offsetWidth + gap, 0);
-
-    slider.style.width = `${totalWidth}px`;
-
-    // Add drag functionality
-    let isDown = false;
-    let startX;
-    let scrollLeft;
-
-    slider.addEventListener('mousedown', (e) => {
-        isDown = true;
-        slider.classList.add('active');
-        startX = e.pageX - slider.offsetLeft;
-        scrollLeft = slider.scrollLeft;
-    });
-
-    slider.addEventListener('mouseleave', () => {
-        isDown = false;
-        slider.classList.remove('active');
-    });
-
-    slider.addEventListener('mouseup', () => {
-        isDown = false;
-        slider.classList.remove('active');
-    });
-
-    slider.addEventListener('mousemove', (e) => {
-        if (!isDown) return;
-        e.preventDefault();
-        const x = e.pageX - slider.offsetLeft;
-        const walk = (x - startX) * 2; // Scroll-fast
-        slider.scrollLeft = scrollLeft - walk;
-    });
+    // Grid layout doesn't need slider initialization
+    // All content is visible and scrollable vertically
 }

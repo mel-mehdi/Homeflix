@@ -81,31 +81,65 @@ function setupTitleCardInteractions() {
 }
 
 // Button functionality functions
-function addToMyList(title, button) {
+async function addToMyList(title, button) {
+    const card = button.closest('.title-card');
+    const type = card.dataset.type;
+    const id = card.dataset.id;
+    const tmdbId = card.dataset.tmdbId;
+    
     // Toggle between add and remove
     const isAdded = button.dataset.added === 'true';
     
-    if (isAdded) {
-        button.innerHTML = `
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor"/>
-            </svg>
-        `;
-        button.dataset.added = 'false';
-        button.style.backgroundColor = 'rgba(42,42,42,0.6)';
-        if (typeof homeflixApp !== 'undefined') {
-            homeflixApp.showNotification(`"${title}" removed from My List`, 'success');
+    try {
+        // Make API call to add/remove from list
+        const response = await fetch('/api/my-list', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: isAdded ? 'remove' : 'add',
+                type: type,
+                id: id,
+                tmdb_id: tmdbId,
+                title: title
+            })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            // Update UI
+            if (isAdded) {
+                button.innerHTML = `
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor"/>
+                    </svg>
+                `;
+                button.dataset.added = 'false';
+                button.title = 'Add to My List';
+                if (typeof homeflixApp !== 'undefined') {
+                    homeflixApp.showNotification(`"${title}" removed from My List`, 'success');
+                }
+            } else {
+                button.innerHTML = `
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor"/>
+                    </svg>
+                `;
+                button.dataset.added = 'true';
+                button.title = 'Remove from My List';
+                if (typeof homeflixApp !== 'undefined') {
+                    homeflixApp.showNotification(`"${title}" added to My List`, 'success');
+                }
+            }
+        } else {
+            throw new Error(data.message || 'Failed to update My List');
         }
-    } else {
-        button.innerHTML = `
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor"/>
-            </svg>
-        `;
-        button.dataset.added = 'true';
-        button.style.backgroundColor = '#46d369';
+    } catch (error) {
+        console.error('Error updating My List:', error);
         if (typeof homeflixApp !== 'undefined') {
-            homeflixApp.showNotification(`"${title}" added to My List`, 'success');
+            homeflixApp.showNotification('Failed to update My List', 'error');
         }
     }
 }

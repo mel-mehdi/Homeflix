@@ -1,4 +1,4 @@
-// Netflix-style Homeflix functionality
+// Netflix-style Myflix functionality
 const homeflixApp = {
     // Play title (movie or series)
     playTitle: function(type, id) {
@@ -252,5 +252,5 @@ const homeflixApp = {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Homeflix app initialized');
+    console.log('Myflix app initialized');
 });

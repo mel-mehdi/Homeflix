@@ -504,6 +504,7 @@ body {
         
 /* Content Rows */
 .content-row {
+	margin-top: 3vw;
     margin-bottom: 3vw;
     padding: 0 4%;
 }
@@ -525,25 +526,16 @@ body {
 }
 
 .slider-container {
-    display: flex;
-    gap: 4px;
-    overflow-x: auto;
-    overflow-y: visible;
-    padding: 3vw 0;
-    scroll-behavior: smooth;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-
-.slider-container::-webkit-scrollbar {
-    display: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(20vw, 1fr));
+    gap: 1vw;
+    padding: 2vw 0;
 }
 
 /* Title Cards */
 .title-card {
     position: relative;
-    min-width: 20vw;
-    max-width: 20vw;
+    width: 100%;
     border-radius: 4px;
     transition: transform 0.3s ease;
     cursor: pointer;
@@ -551,7 +543,7 @@ body {
 }
 
 .title-card:hover {
-    transform: scale(1.08);
+    transform: scale(1.05);
     z-index: 10;
     transition: transform 0.3s ease, z-index 0s;
 }
@@ -718,6 +710,10 @@ body {
     .row-title {
         font-size: 1.8vw;
     }
+    
+    .slider-container {
+        grid-template-columns: repeat(auto-fill, minmax(22vw, 1fr));
+    }
 }
 
 @media screen and (max-width: 950px) {
@@ -769,9 +765,8 @@ body {
         font-size: 3vw;
     }
     
-    .title-card {
-        min-width: 30vw;
-        max-width: 30vw;
+    .slider-container {
+        grid-template-columns: repeat(auto-fill, minmax(30vw, 1fr));
     }
     
     .title-card-image {
@@ -824,9 +819,8 @@ body {
         font-size: 4vw;
     }
     
-    .title-card {
-        min-width: 40vw;
-        max-width: 40vw;
+    .slider-container {
+        grid-template-columns: repeat(auto-fill, minmax(40vw, 1fr));
     }
     
     .title-card-image {
@@ -856,9 +850,8 @@ body {
         min-height: 28px;
     }
     
-    .title-card {
-        min-width: 60vw;
-        max-width: 60vw;
+    .slider-container {
+        grid-template-columns: repeat(auto-fill, minmax(60vw, 1fr));
     }
     
     .title-card-image {
@@ -873,15 +866,6 @@ body {
 /* Additional Netflix-style enhancements */
 .title-card-metadata {
     box-shadow: 0 3px 10px rgba(0,0,0,0.75);
-}
-
-.slider-container {
-    padding-bottom: 50px;
-}
-
-/* Scrollbar styling for webkit browsers */
-.slider-container::-webkit-scrollbar {
-    height: 0px;
 }
 
 /* Focus states for accessibility */

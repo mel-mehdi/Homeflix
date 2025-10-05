@@ -498,9 +498,9 @@ if __name__ == '__main__':
     import argparse
     
     parser = argparse.ArgumentParser(description='Sync media data to database')
-    parser.add_argument('--movie-pages', type=int, default=5, help='Number of movie pages to fetch')
-    parser.add_argument('--tv-pages', type=int, default=5, help='Number of TV show pages to fetch')
-    parser.add_argument('--trending-pages', type=int, default=3, help='Number of trending pages to fetch')
+    parser.add_argument('--movie-pages', type=int, default=50, help='Number of movie pages to fetch (50 items per page)')
+    parser.add_argument('--tv-pages', type=int, default=50, help='Number of TV show pages to fetch (50 items per page)')
+    parser.add_argument('--trending-pages', type=int, default=50, help='Number of trending pages to fetch (20 items per page)')
     
     args = parser.parse_args()
     
