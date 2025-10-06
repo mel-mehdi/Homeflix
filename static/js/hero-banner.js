@@ -374,8 +374,10 @@ function initializeHeroBanner() {
             const tmdbId = heroCard.dataset.tmdbId;
             const title = document.querySelector('.hero-title').textContent;
             
-            if (typeof homeflixApp !== 'undefined') {
+            if (typeof homeflixApp !== 'undefined' && homeflixApp.toggleMyList) {
                 homeflixApp.toggleMyList(type, id, tmdbId, title, heroAddBtn);
+            } else {
+                console.error('homeflixApp.toggleMyList is not available');
             }
         });
     }
@@ -387,8 +389,10 @@ function initializeHeroBanner() {
             const id = heroCard.dataset.id;
             const title = document.querySelector('.hero-title').textContent;
             
-            if (typeof homeflixApp !== 'undefined') {
+            if (typeof homeflixApp !== 'undefined' && homeflixApp.toggleLike) {
                 homeflixApp.toggleLike(type, id, title, heroLikeBtn);
+            } else {
+                console.error('homeflixApp.toggleLike is not available');
             }
         });
     }

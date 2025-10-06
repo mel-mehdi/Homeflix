@@ -416,6 +416,8 @@
     </main>
 
     <!-- Myflix JavaScript Modules -->
+    <!-- Load netflix.js first as it defines homeflixApp used by other modules -->
+    <script src="/static/js/netflix.js"></script>
     <script src="/static/js/hero-banner.js"></script>
     <script src="/static/js/ui-components.js"></script>
     <script src="/static/js/title-cards.js"></script>
@@ -423,9 +425,6 @@
     <script src="/static/js/my-list.js"></script>
     <script src="/static/js/navigation.js"></script>
     <script src="/static/js/init.js"></script>
-    
-    <!-- Enhanced Netflix-like functionality -->
-    <script src="/static/js/netflix.js"></script>
     
     <!-- Initialize page data AFTER all JS modules are loaded -->
     <script>

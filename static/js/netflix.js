@@ -50,27 +50,29 @@ const homeflixApp = {
 
             const data = await response.json();
             
-            // Update button state
-            if (data.added || !isAdded) {
-                // Added to list
-                button.innerHTML = `
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor"/>
-                    </svg>
-                `;
-                button.dataset.added = 'true';
-                button.title = 'Remove from My List';
-                this.showNotification(`Added "${title}" to My List`, 'success');
-            } else {
-                // Removed from list
-                button.innerHTML = `
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor"/>
-                    </svg>
-                `;
-                button.dataset.added = 'false';
-                button.title = 'Add to My List';
-                this.showNotification(`Removed "${title}" from My List`, 'info');
+            // Update button state based on action performed
+            if (data.success) {
+                if (!isAdded) {
+                    // Added to list
+                    button.innerHTML = `
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor"/>
+                        </svg>
+                    `;
+                    button.dataset.added = 'true';
+                    button.title = 'Remove from My List';
+                    this.showNotification(`Added "${title}" to My List`, 'success');
+                } else {
+                    // Removed from list
+                    button.innerHTML = `
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor"/>
+                        </svg>
+                    `;
+                    button.dataset.added = 'false';
+                    button.title = 'Add to My List';
+                    this.showNotification(`Removed "${title}" from My List`, 'info');
+                }
             }
         } catch (error) {
             console.error('Error toggling My List:', error);
@@ -104,78 +106,29 @@ const homeflixApp = {
             return;
         }
 
-        try {
-            // Check current state
-            const isLiked = button.dataset.liked === 'true';
-            
-            // Make API call to like/unlike
-            const response = await fetch('/api/like', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    action: isLiked ? 'unlike' : 'like',
-                    type: type,
-                    id: id,
-                    title: title
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to update like status');
-            }
-
-            const data = await response.json();
-            
-            // Update button state
-            if (data.liked || !isLiked) {
-                // Liked
-                button.innerHTML = `
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z" fill="currentColor"/>
-                    </svg>
-                `;
-                button.dataset.liked = 'true';
-                button.title = 'Unlike';
-                button.style.opacity = '1';
-                this.showNotification(`You liked "${title}"`, 'success');
-            } else {
-                // Unliked
-                button.innerHTML = `
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z" fill="currentColor"/>
-                    </svg>
-                `;
-                button.dataset.liked = 'false';
-                button.title = 'Like';
-                button.style.opacity = '0.7';
-                this.showNotification(`You unliked "${title}"`, 'info');
-            }
-        } catch (error) {
-            console.error('Error toggling like:', error);
-            // Fallback to simple toggle
-            const isLiked = button.dataset.liked === 'true';
-            
-            if (isLiked) {
-                button.innerHTML = `
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z" fill="currentColor"/>
-                    </svg>
-                `;
-                button.dataset.liked = 'false';
-                button.title = 'Like';
-                button.style.opacity = '0.7';
-            } else {
-                button.innerHTML = `
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z" fill="currentColor"/>
-                    </svg>
-                `;
-                button.dataset.liked = 'true';
-                button.title = 'Unlike';
-                button.style.opacity = '1';
-            }
+        // For now, just toggle locally without backend (like feature is visual only)
+        const isLiked = button.dataset.liked === 'true';
+        
+        if (isLiked) {
+            // Unlike
+            button.innerHTML = `
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z" fill="currentColor" stroke="currentColor" stroke-width="1"/>
+                </svg>
+            `;
+            button.dataset.liked = 'false';
+            button.title = 'Rate';
+            this.showNotification(`Removed rating for "${title}"`, 'info');
+        } else {
+            // Like
+            button.innerHTML = `
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/>
+                </svg>
+            `;
+            button.dataset.liked = 'true';
+            button.title = 'Rated';
+            this.showNotification(`You rated "${title}"`, 'success');
         }
     },
 
