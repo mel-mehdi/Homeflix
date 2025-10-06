@@ -31,19 +31,22 @@ adapter = requests.adapters.HTTPAdapter(pool_connections=20, pool_maxsize=20)
 session.mount('http://', adapter)
 session.mount('https://', adapter)
 
+# Semaphore to limit concurrent TMDB requests (TMDB rate limit ~50/sec)
+tmdb_semaphore = threading.Semaphore(40)
+
 def fetch_and_store_vidsrc_movies(max_pages=5):
     """Fetch movies from VidSrc and store in database (parallel API fetch, sequential DB write)"""
     print("📽️  Fetching movies from VidSrc...")
     
     # Fetch all pages in parallel with limited workers to avoid rate limiting
     all_movies = []
-    batch_size = 20  # Process 20 pages at a time to avoid overwhelming the server
+    batch_size = 50  # Process 50 pages at a time to avoid overwhelming the server
     
     for batch_start in range(1, max_pages + 1, batch_size):
         batch_end = min(batch_start + batch_size, max_pages + 1)
         print(f"   Fetching pages {batch_start} to {batch_end - 1}...")
         
-        with ThreadPoolExecutor(max_workers=5) as executor:
+        with ThreadPoolExecutor(max_workers=10) as executor:
             page_futures = {executor.submit(fetch_vidsrc_page, page, 'movies'): page for page in range(batch_start, batch_end)}
             for future in as_completed(page_futures):
                 try:
@@ -95,17 +98,12 @@ def fetch_and_store_vidsrc_movies(max_pages=5):
                 except Exception as e:
                     pass
     
-    # Write to database sequentially (thread-safe)
-    count = 0
-    with DatabaseService() as db_service:
-        for movie_data in movie_data_list:
-            try:
-                db_service.create_or_update_movie(movie_data)
-                count += 1
-                if count % 50 == 0:
-                    print(f"   ✅ Saved {count} movies...")
-            except Exception as e:
-                print(f"   ❌ Error saving {movie_data.get('title', 'Unknown')}: {e}")
+    # Write to database in batch (thread-safe)
+    count = len(movie_data_list)
+    if movie_data_list:
+        with DatabaseService() as db_service:
+            db_service.create_or_update_movies_batch(movie_data_list)
+        print(f"   ✅ Saved {count} movies...")
     
     print(f"✅ Movies sync completed! Total: {count}")
 
@@ -125,11 +123,15 @@ def fetch_vidsrc_page(page, media_type, retry=3):
                 # Empty page means we've reached the end
                 return []
         except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 503 and attempt < retry - 1:
-                # Rate limited, wait and retry
-                wait_time = (attempt + 1) * 2
-                time.sleep(wait_time)
-                continue
+            if e.response.status_code == 503:
+                if attempt < retry - 1:
+                    # Service unavailable, wait and retry with exponential backoff
+                    wait_time = 2 ** attempt
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    # After retries, assume we've reached the end
+                    return []
             elif e.response.status_code == 404:
                 # Page doesn't exist, we've reached the end
                 return []
@@ -150,13 +152,13 @@ def fetch_and_store_vidsrc_tvshows(max_pages=5):
     
     # Fetch all pages in parallel with limited workers to avoid rate limiting
     all_tvshows = []
-    batch_size = 20  # Process 20 pages at a time to avoid overwhelming the server
+    batch_size = 50  # Process 50 pages at a time to avoid overwhelming the server
     
     for batch_start in range(1, max_pages + 1, batch_size):
         batch_end = min(batch_start + batch_size, max_pages + 1)
         print(f"   Fetching pages {batch_start} to {batch_end - 1}...")
         
-        with ThreadPoolExecutor(max_workers=5) as executor:
+        with ThreadPoolExecutor(max_workers=10) as executor:
             page_futures = {executor.submit(fetch_vidsrc_page, page, 'tvshows'): page for page in range(batch_start, batch_end)}
             for future in as_completed(page_futures):
                 try:
@@ -206,17 +208,12 @@ def fetch_and_store_vidsrc_tvshows(max_pages=5):
                 except Exception as e:
                     pass
     
-    # Write to database sequentially (thread-safe)
-    count = 0
-    with DatabaseService() as db_service:
-        for tvshow_data in tvshow_data_list:
-            try:
-                db_service.create_or_update_tvshow(tvshow_data)
-                count += 1
-                if count % 50 == 0:
-                    print(f"   ✅ Saved {count} TV shows...")
-            except Exception as e:
-                print(f"   ❌ Error saving {tvshow_data.get('title', 'Unknown')}: {e}")
+    # Write to database in batch (thread-safe)
+    count = len(tvshow_data_list)
+    if tvshow_data_list:
+        with DatabaseService() as db_service:
+            db_service.create_or_update_tvshows_batch(tvshow_data_list)
+        print(f"   ✅ Saved {count} TV shows...")
     
     print(f"✅ TV shows sync completed! Total: {count}")
 
@@ -226,7 +223,7 @@ def fetch_and_store_trending_movies(max_pages=3):
     
     # Fetch all pages in parallel (fast API calls)
     all_movies = []
-    with ThreadPoolExecutor(max_workers=3) as executor:
+    with ThreadPoolExecutor(max_workers=5) as executor:
         page_futures = {executor.submit(fetch_tmdb_trending_page, page, 'movie'): page for page in range(1, max_pages + 1)}
         for future in as_completed(page_futures):
             try:
@@ -275,7 +272,7 @@ def fetch_and_store_trending_movies(max_pages=3):
         except Exception as e:
             return None
     
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=20) as executor:
         movie_futures = [executor.submit(process_trending_movie, movie) for movie in all_movies]
         for future in as_completed(movie_futures):
             try:
@@ -285,17 +282,13 @@ def fetch_and_store_trending_movies(max_pages=3):
             except Exception as e:
                 pass
     
-    # Write to database sequentially (thread-safe)
-    count = 0
-    with DatabaseService() as db_service:
-        db_service.clear_trending_flags('movie')
-        for movie_data in movie_data_list:
-            try:
-                db_service.create_or_update_movie(movie_data)
-                count += 1
-                print(f"   ✅ [{count}] Saved trending: {movie_data['title']}")
-            except Exception as e:
-                print(f"   ❌ Error saving {movie_data.get('title', 'Unknown')}: {e}")
+    # Write to database in batch (thread-safe)
+    count = len(movie_data_list)
+    if movie_data_list:
+        with DatabaseService() as db_service:
+            db_service.clear_trending_flags('movie')
+            db_service.create_or_update_movies_batch(movie_data_list)
+        print(f"   ✅ Saved {count} trending movies...")
     
     print(f"✅ Trending movies sync completed! Total: {count}")
 
@@ -306,7 +299,8 @@ def fetch_tmdb_trending_page(page, media_type):
         headers = {'Authorization': f'Bearer {TMDB_ACCESS_TOKEN}'}
         params = {'page': page}
         
-        response = session.get(url, headers=headers, params=params, timeout=10)
+        with tmdb_semaphore:
+            response = session.get(url, headers=headers, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
         results = data.get('results', [])
@@ -321,7 +315,8 @@ def get_best_images(tmdb_id, media_type, default_poster, default_backdrop):
     try:
         headers = {'Authorization': f'Bearer {TMDB_ACCESS_TOKEN}'}
         images_url = f"{TMDB_BASE_URL}/{media_type}/{tmdb_id}/images"
-        response = session.get(images_url, headers=headers, timeout=5)
+        with tmdb_semaphore:
+            response = session.get(images_url, headers=headers, timeout=5)
         response.raise_for_status()
         images_data = response.json()
         
@@ -349,7 +344,7 @@ def fetch_and_store_trending_tvshows(max_pages=3):
     
     # Fetch all pages in parallel (fast API calls)
     all_tvshows = []
-    with ThreadPoolExecutor(max_workers=3) as executor:
+    with ThreadPoolExecutor(max_workers=5) as executor:
         page_futures = {executor.submit(fetch_tmdb_trending_page, page, 'tv'): page for page in range(1, max_pages + 1)}
         for future in as_completed(page_futures):
             try:
@@ -397,7 +392,7 @@ def fetch_and_store_trending_tvshows(max_pages=3):
         except Exception as e:
             return None
     
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=20) as executor:
         tvshow_futures = [executor.submit(process_trending_tvshow, show) for show in all_tvshows]
         for future in as_completed(tvshow_futures):
             try:
@@ -407,17 +402,13 @@ def fetch_and_store_trending_tvshows(max_pages=3):
             except Exception as e:
                 pass
     
-    # Write to database sequentially (thread-safe)
-    count = 0
-    with DatabaseService() as db_service:
-        db_service.clear_trending_flags('tv')
-        for tvshow_data in tvshow_data_list:
-            try:
-                db_service.create_or_update_tvshow(tvshow_data)
-                count += 1
-                print(f"   ✅ [{count}] Saved trending: {tvshow_data['title']}")
-            except Exception as e:
-                print(f"   ❌ Error saving {tvshow_data.get('title', 'Unknown')}: {e}")
+    # Write to database in batch (thread-safe)
+    count = len(tvshow_data_list)
+    if tvshow_data_list:
+        with DatabaseService() as db_service:
+            db_service.clear_trending_flags('tv')
+            db_service.create_or_update_tvshows_batch(tvshow_data_list)
+        print(f"   ✅ Saved {count} trending TV shows...")
     
     print(f"✅ Trending TV shows sync completed! Total: {count}")
 
@@ -428,8 +419,8 @@ def get_movie_details_from_tmdb(imdb_id):
         headers = {'Authorization': f'Bearer {TMDB_ACCESS_TOKEN}'}
         
         # Find movie by IMDB ID
-        url = f"{TMDB_BASE_URL}/find/{imdb_id}?external_source=imdb_id"
-        response = session.get(url, headers=headers, timeout=10)
+        with tmdb_semaphore:
+            response = session.get(url, headers=headers, timeout=10)
         response.raise_for_status()
         data = response.json()
         
@@ -441,7 +432,8 @@ def get_movie_details_from_tmdb(imdb_id):
         
         # Get detailed info
         details_url = f"{TMDB_BASE_URL}/movie/{tmdb_id}"
-        details_response = session.get(details_url, headers=headers, timeout=10)
+        with tmdb_semaphore:
+            details_response = session.get(details_url, headers=headers, timeout=10)
         details_response.raise_for_status()
         details = details_response.json()
         
@@ -450,7 +442,8 @@ def get_movie_details_from_tmdb(imdb_id):
         
         # Get certification
         cert_url = f"{TMDB_BASE_URL}/movie/{tmdb_id}/release_dates"
-        cert_response = session.get(cert_url, headers=headers, timeout=10)
+        with tmdb_semaphore:
+            cert_response = session.get(cert_url, headers=headers, timeout=10)
         cert_response.raise_for_status()
         cert_data = cert_response.json()
         
@@ -508,7 +501,8 @@ def get_tvshow_details_from_tmdb(imdb_id):
         
         # Get detailed info
         details_url = f"{TMDB_BASE_URL}/tv/{tmdb_id}"
-        details_response = session.get(details_url, headers=headers, timeout=10)
+        with tmdb_semaphore:
+            details_response = session.get(details_url, headers=headers, timeout=10)
         details_response.raise_for_status()
         details = details_response.json()
         
@@ -541,7 +535,8 @@ def get_imdb_id_from_tmdb(tmdb_id, media_type):
     try:
         headers = {'Authorization': f'Bearer {TMDB_ACCESS_TOKEN}'}
         url = f"{TMDB_BASE_URL}/{media_type}/{tmdb_id}/external_ids"
-        response = session.get(url, headers=headers, timeout=10)
+        with tmdb_semaphore:
+            response = session.get(url, headers=headers, timeout=10)
         response.raise_for_status()
         data = response.json()
         return data.get('imdb_id')

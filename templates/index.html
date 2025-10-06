@@ -67,13 +67,13 @@
 
             <div class="hero-content">
                 <div class="hero-info">
-                    {% if series and series|length > 0 %}
+                    {% if trending_movies and trending_movies|length > 0 %}
                     <!-- Hidden data for hero card -->
-                    <div class="hidden" data-hero="true" data-type="series" data-id="{{ series[0].imdb_id }}" data-tmdb-id="{{ series[0].tmdb_id }}"></div>
+                    <div class="hidden" data-hero="true" data-type="movie" data-id="{{ trending_movies[0].imdb_id }}" data-tmdb-id="{{ trending_movies[0].tmdb_id }}"></div>
                     
                     <!-- Netflix-style logo/title image (if available) -->
                     <div class="hero-logo">
-                        <h1 class="hero-title">{{ series[0].title }}</h1>
+                        <h1 class="hero-title">{{ trending_movies[0].title }}</h1>
                     </div>
                     {% else %}
                     <div class="hero-logo">
@@ -109,11 +109,11 @@
                         </button>
                     </div>
                     
-                    {% if series and series|length > 0 %}
+                    {% if trending_movies and trending_movies|length > 0 %}
                     <!-- Expanded info section (hidden by default) -->
                     <div class="hero-expanded-info" id="heroExpandedInfo">
                         <div class="hero-synopsis-full" id="heroSynopsis">
-                            <p>{{ series[0].overview if series[0].overview else "Full description of the show goes here with all the details about plot, characters, and what makes it worth watching." }}</p>
+                            <p>{{ trending_movies[0].overview if trending_movies[0].overview else "Full description of the movie goes here with all the details about plot, characters, and what makes it worth watching." }}</p>
                             <button class="hero-show-more-btn" id="heroShowMoreBtn" onclick="toggleHeroExpanded()">
                                 <span id="heroShowMoreText">Show More</span>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -433,7 +433,7 @@
             initializePaginationData({{ movie_page }}, {{ series_page }}, "{{ search_query }}");
         }
         if (typeof initializeHeroBannerData === 'function') {
-            initializeHeroBannerData({{ backdrop_urls | tojson }}, {{ series | tojson }});
+            initializeHeroBannerData({{ backdrop_urls | tojson }}, {{ trending_movies | tojson }});
         }
     </script>
 </body>

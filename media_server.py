@@ -122,10 +122,10 @@ def index():
         if my_list:
             _populate_image_cache(my_list, 'mixed')  # My List can have both movies and series
         
-        # Get backdrop URLs for hero section from series (already in database results)
+        # Get backdrop URLs for hero section from trending movies
         backdrop_urls = []
-        for show in series:
-            backdrop_url = show.get('backdrop_url')
+        for movie in trending_movies:
+            backdrop_url = movie.get('backdrop_url')
             if backdrop_url:
                 backdrop_urls.append(backdrop_url)
         

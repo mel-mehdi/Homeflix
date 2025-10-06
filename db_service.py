@@ -44,6 +44,25 @@ class DatabaseService:
         self.db.refresh(movie)
         return movie
     
+    def create_or_update_movies_batch(self, movies_data):
+        """Create or update multiple movies in batch"""
+        for movie_data in movies_data:
+            movie = self.get_movie_by_imdb_id(movie_data.get('imdb_id'))
+            
+            if movie:
+                # Update existing movie
+                for key, value in movie_data.items():
+                    if hasattr(movie, key):
+                        setattr(movie, key, value)
+                movie.updated_at = datetime.utcnow()
+            else:
+                # Create new movie
+                movie = Movie(**movie_data)
+                self.db.add(movie)
+        
+        self.db.commit()
+        return len(movies_data)
+    
     def get_latest_movies(self, page=1, per_page=16):
         """Get latest movies from database"""
         offset = (page - 1) * per_page
@@ -102,6 +121,25 @@ class DatabaseService:
         self.db.commit()
         self.db.refresh(tvshow)
         return tvshow
+    
+    def create_or_update_tvshows_batch(self, tvshows_data):
+        """Create or update multiple TV shows in batch"""
+        for tvshow_data in tvshows_data:
+            tvshow = self.get_tvshow_by_imdb_id(tvshow_data.get('imdb_id'))
+            
+            if tvshow:
+                # Update existing TV show
+                for key, value in tvshow_data.items():
+                    if hasattr(tvshow, key):
+                        setattr(tvshow, key, value)
+                tvshow.updated_at = datetime.utcnow()
+            else:
+                # Create new TV show
+                tvshow = TVShow(**tvshow_data)
+                self.db.add(tvshow)
+        
+        self.db.commit()
+        return len(tvshows_data)
     
     def get_latest_tvshows(self, page=1, per_page=16):
         """Get latest TV shows from database"""
