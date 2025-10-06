@@ -261,6 +261,7 @@ def series_details(imdb_id):
         # Fetch series details from database first
         with DatabaseService() as db_service:
             series = db_service.get_tvshow_by_imdb_id(imdb_id)
+            my_list = db_service.get_my_list()  # Get My List items
         
         if not series:
             return "Series not found", 404
@@ -312,7 +313,7 @@ def series_details(imdb_id):
             series_dict['status'] = series_data.get('status', '')
             series_dict['tagline'] = series_data.get('tagline', '')
         
-        return render_template('series_details.html', series=series_dict, imdb_id=imdb_id)
+        return render_template('series_details.html', series=series_dict, imdb_id=imdb_id, my_list=my_list)
     except Exception as e:
         logger.error(f" in series_details: {e}")
         return f"Error: {e}", 500
@@ -324,6 +325,7 @@ def movie_details(imdb_id):
         # Fetch movie details from database first
         with DatabaseService() as db_service:
             movie = db_service.get_movie_by_imdb_id(imdb_id)
+            my_list = db_service.get_my_list()  # Get My List items
         
         if not movie:
             return "Movie not found", 404
@@ -368,7 +370,7 @@ def movie_details(imdb_id):
             movie_dict['budget'] = movie_data.get('budget', 0)
             movie_dict['revenue'] = movie_data.get('revenue', 0)
         
-        return render_template('movie_details.html', movie=movie_dict, imdb_id=imdb_id)
+        return render_template('movie_details.html', movie=movie_dict, imdb_id=imdb_id, my_list=my_list)
     except Exception as e:
         logger.error(f"Error in movie_details: {e}")
         return f"Error: {e}", 500
@@ -467,92 +469,6 @@ def watch_episode(imdb_id, season_number, episode_number):
         logger.error(f" in watch_episode: {e}")
         return f"Error: {e}", 500
 
-def fetch_latest_movies(page=1):
-    """Fetch latest movies from vidsrc API"""
-    try:
-        url = f"https://vidsrc.xyz/movies/latest/page-{page}.json"
-        data = get_cached_data(url, vidsrc_cache, CACHE_DURATION_VIDSRC)
-        movies = data.get('result', [])[:16]
-        for movie in movies:
-            # Fetch accurate details from TMDB
-            details = get_movie_details(movie['imdb_id'])
-            if details:
-                movie.update(details)  # Merge all details into movie object
-            movie['poster_url'] = get_poster_url(movie.get('tmdb_id'), 'movie')
-        return movies
-    except Exception as e:
-        logger.error(f" fetching movies: {e}")
-        return []
-
-def fetch_latest_tvshows(page=1):
-    """Fetch latest TV shows from vidsrc API"""
-    try:
-        url = f"https://vidsrc.xyz/tvshows/latest/page-{page}.json"
-        data = get_cached_data(url, vidsrc_cache, CACHE_DURATION_VIDSRC)
-        series = data.get('result', [])[:16]
-        for serie in series:
-            # Fetch accurate details from TMDB
-            details = get_series_details(serie['imdb_id'])
-            if details:
-                serie['title'] = details['title']
-                serie['tmdb_id'] = details['tmdb_id']  # Update with correct TMDB ID
-            serie['poster_url'] = get_poster_url(serie.get('tmdb_id'), 'tv')
-        return series
-    except Exception as e:
-        logger.error(f" fetching tvshows: {e}")
-        return []
-
-def fetch_trending_movies(page=1):
-    """Fetch trending movies from TMDB (fallback when database is empty)"""
-    try:
-        url = f"{TMDB_BASE_URL}/trending/movie/week"
-        headers = {'Authorization': f'Bearer {TMDB_ACCESS_TOKEN}'}
-        params = {'page': page}
-        data = get_cached_tmdb_data(url, headers, params=params)
-        movies = data.get('results', [])[:16]
-        for movie in movies:
-            movie['tmdb_id'] = movie['id']
-            imdb_id = get_imdb_id(movie['tmdb_id'], 'movie')
-            movie['imdb_id'] = imdb_id
-            # Build poster URL directly
-            movie['poster_url'] = f"/poster/movie/{movie['tmdb_id']}"
-            movie['backdrop_url'] = f"/backdrop/movie/{movie['tmdb_id']}" if movie.get('backdrop_path') else None
-            movie['quality'] = 'HD'
-            # Cache the paths
-            if movie.get('poster_path'):
-                poster_cache[f"movie_{movie['tmdb_id']}_poster"] = movie['poster_path']
-            if movie.get('backdrop_path'):
-                backdrop_cache[f"movie_{movie['tmdb_id']}_backdrop"] = movie['backdrop_path']
-        return movies
-    except Exception as e:
-        logger.error(f" fetching trending movies: {e}")
-        return []
-
-def fetch_trending_tvshows(page=1):
-    """Fetch trending TV shows from TMDB (fallback when database is empty)"""
-    try:
-        url = f"{TMDB_BASE_URL}/trending/tv/week"
-        headers = {'Authorization': f'Bearer {TMDB_ACCESS_TOKEN}'}
-        params = {'page': page}
-        data = get_cached_tmdb_data(url, headers, params=params)
-        series = data.get('results', [])[:16]
-        for show in series:
-            show['tmdb_id'] = show['id']
-            imdb_id = get_imdb_id(show['tmdb_id'], 'tv')
-            show['imdb_id'] = imdb_id
-            # Build poster URL directly
-            show['poster_url'] = f"/poster/tv/{show['tmdb_id']}"
-            show['backdrop_url'] = f"/backdrop/tv/{show['tmdb_id']}" if show.get('backdrop_path') else None
-            # Cache the paths
-            if show.get('poster_path'):
-                poster_cache[f"tv_{show['tmdb_id']}_poster"] = show['poster_path']
-            if show.get('backdrop_path'):
-                backdrop_cache[f"tv_{show['tmdb_id']}_backdrop"] = show['backdrop_path']
-        return series
-    except Exception as e:
-        logger.error(f" fetching trending tvshows: {e}")
-        return []
-
 def search_tmdb_movies(query, page=1):
     """Search movies using TMDB API"""
     try:
@@ -622,6 +538,7 @@ def get_imdb_id(tmdb_id, media_type):
     except Exception as e:
         logger.error(f" getting IMDB ID for {tmdb_id}: {e}")
         return None
+
 def get_poster_url(tmdb_id, media_type='movie'):
     """Get poster URL - checks database first, then fetches from API if needed"""
     if not tmdb_id:
@@ -735,7 +652,11 @@ def get_backdrop_url(tmdb_id, media_type='movie'):
 @app.route('/backdrop/<media_type>/<int:tmdb_id>')
 def get_backdrop(media_type, tmdb_id):
     if not TMDB_ACCESS_TOKEN:
-        abort(404)
+        svg = '''<svg width="500" height="281" xmlns="http://www.w3.org/2000/svg">
+        <rect width="500" height="281" fill="#333"/>
+        <text x="250" y="140" text-anchor="middle" fill="white" font-size="20">No Backdrop</text>
+        </svg>'''
+        return Response(svg, mimetype='image/svg+xml')
     
     key = f"{media_type}_{tmdb_id}_backdrop"
     if key not in backdrop_cache:
@@ -752,78 +673,14 @@ def get_backdrop(media_type, tmdb_id):
         logger.error(f" proxying backdrop: {e}")
         abort(404)
 
-# Add this new route for serving CSS files
 @app.route('/css/<filename>')
 def serve_css(filename):
     """Serve CSS files"""
     try:
-        return send_from_directory(CSS_FOLDER, filename, mimetype='text/css')
+        return send_from_directory(CSS_FOLDER, filename)
     except Exception as e:
         logger.error(f" serving CSS {filename}: {e}")
         abort(404)
-
-def get_movie_details(imdb_id):
-    """Get movie details from TMDB by IMDB ID"""
-    try:
-        url = f"{TMDB_BASE_URL}/find/{imdb_id}?external_source=imdb_id"
-        headers = {'Authorization': f'Bearer {TMDB_ACCESS_TOKEN}'}
-        data = get_cached_data(url, tmdb_cache, CACHE_DURATION_TMDB, headers)
-        if data.get('movie_results'):
-            movie = data['movie_results'][0]
-            tmdb_id = movie.get('id')
-            
-            # Get detailed movie info
-            details_url = f"{TMDB_BASE_URL}/movie/{tmdb_id}"
-            details_data = get_cached_data(details_url, tmdb_cache, CACHE_DURATION_TMDB, headers)
-            
-            # Get certification
-            cert_url = f"{TMDB_BASE_URL}/movie/{tmdb_id}/release_dates"
-            cert_data = get_cached_data(cert_url, tmdb_cache, CACHE_DURATION_TMDB, headers)
-            rating = 'TV-MA'  # default
-            if cert_data.get('results'):
-                for country in cert_data['results']:
-                    if country.get('iso_3166_1') == 'US':
-                        for release in country.get('release_dates', []):
-                            if release.get('certification'):
-                                rating = release['certification']
-                                break
-                        break
-            
-            genres = [genre['name'] for genre in details_data.get('genres', [])]
-            year = details_data.get('release_date', '')[:4] if details_data.get('release_date') else ''
-            duration = f"{details_data.get('runtime', 0)//60}h {details_data.get('runtime', 0)%60}m" if details_data.get('runtime') else ''
-            
-            return {
-                'title': movie.get('title', 'Unknown'),
-                'tmdb_id': tmdb_id,
-                'overview': movie.get('overview', ''),
-                'release_date': movie.get('release_date', ''),
-                'year': year,
-                'rating': rating,
-                'duration': duration,
-                'genres': genres,
-            }
-    except Exception as e:
-        logger.error(f" getting movie details for {imdb_id}: {e}")
-    return None
-
-def get_series_details(imdb_id):
-    """Get series details from TMDB by IMDB ID"""
-    try:
-        url = f"{TMDB_BASE_URL}/find/{imdb_id}?external_source=imdb_id"
-        headers = {'Authorization': f'Bearer {TMDB_ACCESS_TOKEN}'}
-        data = get_cached_data(url, tmdb_cache, CACHE_DURATION_TMDB, headers)
-        if data.get('tv_results'):
-            show = data['tv_results'][0]
-            return {
-                'title': show.get('name', 'Unknown'),
-                'tmdb_id': show.get('id'),
-                'overview': show.get('overview', ''),
-                'first_air_date': show.get('first_air_date', ''),
-            }
-    except Exception as e:
-        logger.error(f" getting series details for {imdb_id}: {e}")
-    return None
 
 @app.route('/search')
 def search():
@@ -869,7 +726,7 @@ def search():
 
 @app.route('/search_more_movies/<query>/<int:page>')
 def search_more_movies(query, page):
-    """Load more search movies"""
+    """Load more search results for movies"""
     try:
         movies = search_tmdb_movies(query, page)
         return {'movies': movies}
@@ -878,7 +735,7 @@ def search_more_movies(query, page):
 
 @app.route('/search_more_series/<query>/<int:page>')
 def search_more_series(query, page):
-    """Load more search series"""
+    """Load more search results for series"""
     try:
         series = search_tmdb_series(query, page)
         return {'series': series}
@@ -886,33 +743,42 @@ def search_more_series(query, page):
         return {'error': str(e)}, 500
 
 @app.route('/api/my-list', methods=['POST'])
-def api_my_list():
-    """API endpoint to add/remove items from My List"""
+def add_to_my_list():
+    """Add or remove item from My List"""
     try:
         data = request.get_json()
-        action = data.get('action')  # 'add' or 'remove'
-        media_type = data.get('type')  # 'movie' or 'series'
-        media_id = data.get('id')  # imdb_id
+        action = data.get('action', 'add')  # 'add' or 'remove'
+        imdb_id = data.get('imdb_id') or data.get('id')  # support both
+        media_type = data.get('type')  # 'movie' or 'tv'
         tmdb_id = data.get('tmdb_id')
-        title = data.get('title', 'Unknown')
+        title = data.get('title')
         
-        logger.info(f"My List {action}: {media_type} - {title} (ID: {media_id}, TMDB: {tmdb_id})")
-        
-        if not action or not media_type or not media_id:
-            return jsonify({'error': 'Missing required parameters'}), 400
+        if not imdb_id or not media_type:
+            return jsonify({'error': 'Missing id or type'}), 400
         
         with DatabaseService() as db_service:
-            if action == 'add':
-                item, added = db_service.add_to_my_list(media_type, media_id, tmdb_id, title)
-                logger.info(f"Add result: added={added}")
-                return jsonify({'success': True, 'added': True, 'message': 'Added to My List' if added else 'Already in My List'})
-            elif action == 'remove':
-                removed = db_service.remove_from_my_list(media_type, media_id)
-                logger.info(f"Remove result: removed={removed}")
-                return jsonify({'success': True, 'removed': removed, 'added': False, 'message': 'Removed from My List'})
+            if media_type == 'movie':
+                movie = db_service.get_movie_by_imdb_id(imdb_id)
+                if movie:
+                    if action == 'add':
+                        db_service.add_to_my_list('movie', movie.imdb_id, movie.tmdb_id, movie.title)
+                        logger.info(f"Added movie {imdb_id} to My List")
+                    else:
+                        db_service.remove_from_my_list('movie', movie.imdb_id)
+                        logger.info(f"Removed movie {imdb_id} from My List")
+                    return jsonify({'success': True})
             else:
-                return jsonify({'error': 'Invalid action'}), 400
-                
+                series = db_service.get_tvshow_by_imdb_id(imdb_id)
+                if series:
+                    if action == 'add':
+                        db_service.add_to_my_list('series', series.imdb_id, series.tmdb_id, series.title)
+                        logger.info(f"Added series {imdb_id} to My List")
+                    else:
+                        db_service.remove_from_my_list('series', series.imdb_id)
+                        logger.info(f"Removed series {imdb_id} from My List")
+                    return jsonify({'success': True})
+        
+        return jsonify({'error': 'Item not found'}), 404
     except Exception as e:
         logger.error(f"Error in api_my_list: {e}")
         return jsonify({'error': str(e)}), 500
@@ -928,24 +794,63 @@ def get_my_list_api():
     except Exception as e:
         logger.error(f"Error in get_my_list_api: {e}")
         return jsonify({'error': str(e)}), 500
-        return jsonify({'success': True, 'items': my_list})
+
+def get_movie_details(imdb_id):
+    """Get movie details from TMDB by IMDB ID"""
+    try:
+        url = f"{TMDB_BASE_URL}/find/{imdb_id}"
+        headers = {'Authorization': f'Bearer {TMDB_ACCESS_TOKEN}'}
+        params = {'external_source': 'imdb_id'}
+        data = get_cached_tmdb_data(url, headers, params=params)
+        
+        if data.get('movie_results'):
+            movie = data['movie_results'][0]
+            movie['tmdb_id'] = movie['id']
+            return movie
+        return None
     except Exception as e:
-        logger.error(f"Error in get_my_list_api: {e}")
-        return jsonify({'error': str(e)}), 500
+        logger.error(f" getting movie details for {imdb_id}: {e}")
+        return None
+
+def get_series_details(imdb_id):
+    """Get series details from TMDB by IMDB ID"""
+    try:
+        url = f"{TMDB_BASE_URL}/find/{imdb_id}"
+        headers = {'Authorization': f'Bearer {TMDB_ACCESS_TOKEN}'}
+        params = {'external_source': 'imdb_id'}
+        data = get_cached_tmdb_data(url, headers, params=params)
+        
+        if data.get('tv_results'):
+            series = data['tv_results'][0]
+            series['tmdb_id'] = series['id']
+            return series
+        return None
+    except Exception as e:
+        logger.error(f" getting series details for {imdb_id}: {e}")
+        return None
+
+def get_network_ip():
+    """Get the network IP address of the machine"""
+    try:
+        # Try to get IP from external service
+        response = requests.get('https://api.ipify.org', timeout=5)
+        if response.status_code == 200:
+            return response.text.strip()
+    except:
+        pass
+    
+    try:
+        # Fallback: get local IP
+        import socket
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "127.0.0.1"  # Fallback
 
 if __name__ == '__main__':
-    import socket
-    def get_network_ip():
-        try:
-            # Create a socket to get the local IP
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.connect(("8.8.8.8", 80))  # Connect to Google DNS
-            ip = s.getsockname()[0]
-            s.close()
-            return ip
-        except:
-            return "127.0.0.1"  # Fallback
-    
     network_ip = get_network_ip()
     # Server starting silently - access at http://localhost:5000 or http://<your-ip>:5000
     

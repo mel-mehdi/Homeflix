@@ -235,8 +235,10 @@
             <a href="/" class="netflix-logo">MYFLIX</a>
             <nav class="main-nav">
                 <a href="/" class="nav-link">Home</a>
-                <a href="javascript:void(0)" class="nav-link">TV Shows</a>
-                <a href="javascript:void(0)" class="nav-link">Movies</a>
+                <a href="javascript:void(0)" class="nav-link" onclick="filterByType('tv')">TV Shows</a>
+                <a href="javascript:void(0)" class="nav-link" onclick="filterByType('movie')">Movies</a>
+                <a href="javascript:void(0)" class="nav-link" onclick="showNewPopular()">New & Popular</a>
+                <a href="javascript:void(0)" class="nav-link" onclick="showMyList()">My List</a>
             </nav>
         </div>
     </header>
@@ -269,10 +271,22 @@
                         </svg>
                         Play
                     </button>
-                    <button class="btn-add-list" onclick="addToMyList('movie', '{{ imdb_id }}', {{ movie.tmdb_id }}, '{{ movie.title }}', this)">
+                    {% set is_in_list = false %}
+                    {% for item in my_list %}
+                        {% if item.imdb_id == movie.imdb_id %}
+                            {% set is_in_list = true %}
+                        {% endif %}
+                    {% endfor %}
+                    <button class="btn-add-list" data-added="{{ 'true' if is_in_list else 'false' }}" onclick="addToMyList('movie', '{{ imdb_id }}', {{ movie.tmdb_id }}, '{{ movie.title }}', this)">
+                        {% if is_in_list %}
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor"/>
+                        </svg>
+                        {% else %}
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                             <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor"/>
                         </svg>
+                        {% endif %}
                         My List
                     </button>
                     <button class="btn-like">

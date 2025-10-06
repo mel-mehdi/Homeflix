@@ -57,7 +57,7 @@ class DatabaseService:
     def get_trending_movies(self, per_page=16):
         """Get trending movies from database"""
         movies = self.db.query(Movie)\
-            .filter(Movie.is_trending == True)\
+            .filter(Movie.is_trending == True, Movie.imdb_id.isnot(None))\
             .order_by(Movie.popularity.desc())\
             .limit(per_page)\
             .all()
@@ -116,7 +116,7 @@ class DatabaseService:
     def get_trending_tvshows(self, per_page=16):
         """Get trending TV shows from database"""
         tvshows = self.db.query(TVShow)\
-            .filter(TVShow.is_trending == True)\
+            .filter(TVShow.is_trending == True, TVShow.imdb_id.isnot(None))\
             .order_by(TVShow.popularity.desc())\
             .limit(per_page)\
             .all()
@@ -168,26 +168,18 @@ class DatabaseService:
             # Get the actual movie or TV show data
             if item.media_type == 'movie':
                 media_item = self.get_movie_by_imdb_id(item.media_id)
-            else:  # 'series' or 'tv'
+            else:  # 'series'
                 media_item = self.get_tvshow_by_imdb_id(item.media_id)
             
             if media_item:
                 # Get the full item data
                 item_dict = media_item.to_dict()
                 item_dict['type'] = item.media_type
-                item_dict['id'] = item.media_id
+                item_dict['id'] = media_item.imdb_id  # Use imdb_id as id for frontend compatibility
                 result.append(item_dict)
             else:
-                # Fallback if item not found in database
-                result.append({
-                    'type': item.media_type,
-                    'id': item.media_id,
-                    'imdb_id': item.media_id,
-                    'tmdb_id': item.tmdb_id,
-                    'title': item.title,
-                    'poster_url': None,
-                    'backdrop_url': None,
-                })
+                # Fallback if item not found in database - skip it
+                pass
         
         return result
     

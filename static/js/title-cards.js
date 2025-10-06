@@ -80,11 +80,23 @@ function setupTitleCardInteractions() {
 }
 
 // Button functionality functions
-async function addToMyList(title, button) {
-    const card = button.closest('.title-card');
-    const type = card.dataset.type;
-    const id = card.dataset.id;
-    const tmdbId = card.dataset.tmdbId;
+async function addToMyList(...args) {
+    let type, id, tmdbId, title, button;
+    
+    if (args.length === 2) {
+        // Called from title card: addToMyList(title, button)
+        [title, button] = args;
+        const card = button.closest('.title-card');
+        type = card.dataset.type;
+        id = card.dataset.id;
+        tmdbId = card.dataset.tmdbId;
+    } else if (args.length === 5) {
+        // Called from details page: addToMyList(type, id, tmdbId, title, button)
+        [type, id, tmdbId, title, button] = args;
+    } else {
+        console.error('Invalid arguments for addToMyList');
+        return;
+    }
     
     // Toggle between add and remove
     const isAdded = button.dataset.added === 'true';
