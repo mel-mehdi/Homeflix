@@ -423,7 +423,7 @@ def season_episodes(imdb_id, season_number):
         logger.error(f" in season_episodes: {e}")
         return f"Error: {e}", 500
 
-@app.route('/watch/series/<imdb_id>/season/<int:season_number>/episode/<int:episode_number>')
+@app.route('/watch/series/<imdb_id>/<int:season_number>/<int:episode_number>')
 def watch_episode(imdb_id, season_number, episode_number):
     """Watch a specific episode"""
     try:
@@ -460,6 +460,7 @@ def watch_episode(imdb_id, season_number, episode_number):
                              embed_url=embed_url,
                              embed_sources=embed_sources,
                              title=f"{title} - S{season_number}E{episode_number}",
+                             series_title=title,
                              type='episode',
                              imdb_id=imdb_id,
                              tmdb_id=tmdb_id,
@@ -717,9 +718,17 @@ def search():
             if backdrop_url:
                 backdrop_urls.append(backdrop_url)
         
-        return render_template('index.html', movies=movies, series=series, 
-                             movie_page=1, series_page=1, 
-                             backdrop_urls=backdrop_urls, search_query=query)
+        return render_template('index.html', 
+                             movies=movies, 
+                             series=series, 
+                             movie_page=1, 
+                             series_page=1, 
+                             backdrop_urls=backdrop_urls, 
+                             search_query=query,
+                             trending_movies=[],
+                             trending_series=[],
+                             continue_watching=[],
+                             my_list=[])
     except Exception as e:
         logger.error(f" in search: {e}")
         return f"Error searching: {e}", 500
@@ -795,6 +804,27 @@ def get_my_list_api():
         logger.error(f"Error in get_my_list_api: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/continue_watching', methods=['POST'])
+def save_continue_watching():
+    """Save continue watching progress"""
+    try:
+        data = request.get_json()
+        media_type = data.get('type')
+        media_id = data.get('id')
+        title = data.get('title')
+        progress = data.get('progress', 0)
+        duration = data.get('duration', 0)
+        poster_url = data.get('poster_url', '')
+        
+        # For now, just log the progress - you can extend this to save to database
+        logger.info(f"Continue watching: {title} ({media_type}) - Progress: {progress}/{duration}s")
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        logger.error(f"Error saving continue watching: {e}")
+        return jsonify({'error': str(e)}), 500
+
 def get_movie_details(imdb_id):
     """Get movie details from TMDB by IMDB ID"""
     try:
@@ -849,6 +879,67 @@ def get_network_ip():
         return ip
     except:
         return "127.0.0.1"  # Fallback
+
+@app.route('/api/next_episode/<imdb_id>/<int:season>/<int:episode>')
+def get_next_episode(imdb_id, season, episode):
+    """Get next episode information for series"""
+    try:
+        # Get series details to check total episodes
+        series_details = get_series_details(imdb_id)
+        if not series_details:
+            return jsonify({'has_next': False})
+        
+        tmdb_id = series_details.get('tmdb_id')
+        if not tmdb_id:
+            return jsonify({'has_next': False})
+        
+        # Get season details to check episode count
+        url = f"{TMDB_BASE_URL}/tv/{tmdb_id}/season/{season}"
+        headers = {'Authorization': f'Bearer {TMDB_ACCESS_TOKEN}'}
+        season_data = get_cached_tmdb_data(url, headers)
+        
+        total_episodes = len(season_data.get('episodes', []))
+        next_episode = episode + 1
+        next_season = season
+        
+        # Check if there's a next episode in current season
+        if next_episode <= total_episodes:
+            # Next episode exists in current season
+            episode_data = season_data['episodes'][next_episode - 1]  # 0-indexed
+            
+            return jsonify({
+                'has_next': True,
+                'next_season': next_season,
+                'next_episode': next_episode,
+                'next_title': episode_data.get('name', f'Episode {next_episode}'),
+                'next_overview': episode_data.get('overview', ''),
+                'next_still_path': f"{TMDB_IMAGE_BASE_URL}{episode_data['still_path']}" if episode_data.get('still_path') else None
+            })
+        else:
+            # Check if there's a next season
+            next_season = season + 1
+            try:
+                url = f"{TMDB_BASE_URL}/tv/{tmdb_id}/season/{next_season}"
+                next_season_data = get_cached_tmdb_data(url, headers)
+                
+                if next_season_data.get('episodes'):
+                    first_episode = next_season_data['episodes'][0]
+                    return jsonify({
+                        'has_next': True,
+                        'next_season': next_season,
+                        'next_episode': 1,
+                        'next_title': first_episode.get('name', 'Episode 1'),
+                        'next_overview': first_episode.get('overview', ''),
+                        'next_still_path': f"{TMDB_IMAGE_BASE_URL}{first_episode['still_path']}" if first_episode.get('still_path') else None
+                    })
+            except:
+                pass
+        
+        return jsonify({'has_next': False})
+        
+    except Exception as e:
+        logger.error(f"Error getting next episode for {imdb_id} S{season}E{episode}: {e}")
+        return jsonify({'has_next': False})
 
 if __name__ == '__main__':
     network_ip = get_network_ip()

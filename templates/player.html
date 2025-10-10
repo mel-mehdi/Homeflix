@@ -71,6 +71,14 @@
                 Skip Intro
             </button>
 
+            <!-- Next Episode Button (always visible when available) -->
+            <button class="next-episode-quick-btn" id="nextEpisodeQuickBtn" style="display: none;" onclick="playNextEpisode()" title="Next Episode (N)">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M7 18h2V6H7v12zm4-12v12l9-6-9-6z" fill="currentColor"/>
+                </svg>
+                Next
+            </button>
+
             <!-- Skip Credits/Next Episode -->
             <div class="next-episode-container" id="nextEpisodeContainer" style="display: none;">
                 <div class="next-episode-info">
@@ -116,7 +124,12 @@
         const videoType = "{{ type }}";
         const videoId = "{{ embed_url }}".match(/(?:tmdb=|\/)(tt\d+|\d+)/)?.[1] || '';
         const videoTitle = "{{ title }}";
+        const imdbId = "{{ imdb_id }}";
+        const currentSeason = {% if season %}{{ season }}{% else %}null{% endif %};
+        const currentEpisode = {% if episode %}{{ episode }}{% else %}null{% endif %};
+        const seriesTitle = "{{ series_title if series_title else title }}";
         let currentSourceIndex = 0;
+        let nextEpisodeData = null;
         
         // Show/hide controls on mouse movement
         document.addEventListener('mousemove', showControls);
@@ -156,13 +169,13 @@
                     document.getElementById('skipIntroBtn').style.display = 'none';
                 }
                 
-                // Show next episode container near end
-                if (videoType === 'series' && videoDuration > 0 && currentProgress >= (videoDuration - 120)) {
+                // Show next episode container near end (only if next episode is available)
+                if (videoType === 'episode' && nextEpisodeData && nextEpisodeData.has_next && videoDuration > 0 && currentProgress >= (videoDuration - 120)) {
                     document.getElementById('nextEpisodeContainer').style.display = 'flex';
                 }
                 
-                // Start autoplay countdown
-                if (videoType === 'series' && videoDuration > 0 && currentProgress >= (videoDuration - 30)) {
+                // Start autoplay countdown (only if next episode is available)
+                if (videoType === 'episode' && nextEpisodeData && nextEpisodeData.has_next && videoDuration > 0 && currentProgress >= (videoDuration - 30)) {
                     startAutoplayCountdown();
                 }
                 
@@ -190,7 +203,7 @@
         }
         
         function startAutoplayCountdown() {
-            if (autoplayTimer) return; // Already started
+            if (autoplayTimer || !nextEpisodeData || !nextEpisodeData.has_next) return; // Already started or no next episode
             
             let countdown = 5;
             document.getElementById('autoplayCountdown').style.display = 'block';
@@ -243,7 +256,7 @@
             }, 2000);
         }
         
-        // Handle fullscreen
+        // Handle keyboard shortcuts
         document.addEventListener('keydown', function(e) {
             if (e.key === 'f' || e.key === 'F') {
                 if (document.fullscreenElement) {
@@ -255,8 +268,73 @@
             if (e.key === 'Escape') {
                 showControls();
             }
+            if (e.key === 'n' || e.key === 'N') {
+                // Next episode shortcut
+                if (nextEpisodeData && nextEpisodeData.has_next) {
+                    playNextEpisode();
+                }
+            }
+            if (e.key === 's' || e.key === 'S') {
+                // Skip intro shortcut
+                if (currentProgress >= introStart && currentProgress <= introEnd && !hasSkippedIntro) {
+                    skipIntro();
+                }
+            }
         });
         
+        // Load next episode information for series episodes
+        async function loadNextEpisodeInfo() {
+            if (videoType === 'episode' && currentSeason && currentEpisode) {
+                try {
+                    const response = await fetch(`/api/next_episode/${imdbId}/${currentSeason}/${currentEpisode}`);
+                    const data = await response.json();
+                    
+                    if (data.has_next) {
+                        nextEpisodeData = data;
+                        
+                        // Update next episode info in the UI
+                        const nextEpisodeTitle = document.querySelector('.next-episode-title');
+                        const nextEpisodeLabel = document.querySelector('.next-episode-label');
+                        const nextEpisodeThumbnail = document.querySelector('.next-episode-thumbnail');
+                        const quickNextBtn = document.getElementById('nextEpisodeQuickBtn');
+                        
+                        if (nextEpisodeTitle) {
+                            nextEpisodeTitle.textContent = data.next_title;
+                        }
+                        if (nextEpisodeLabel) {
+                            nextEpisodeLabel.textContent = `S${data.next_season}E${data.next_episode}`;
+                        }
+                        if (nextEpisodeThumbnail && data.next_still_path) {
+                            nextEpisodeThumbnail.style.backgroundImage = `url(${data.next_still_path})`;
+                            nextEpisodeThumbnail.style.backgroundSize = 'cover';
+                            nextEpisodeThumbnail.style.backgroundPosition = 'center';
+                        }
+                        
+                        // Show the quick next episode button
+                        if (quickNextBtn) {
+                            quickNextBtn.style.display = 'flex';
+                            quickNextBtn.title = `Next: S${data.next_season}E${data.next_episode} - ${data.next_title}`;
+                        }
+                    }
+                } catch (error) {
+                    console.log('Failed to load next episode info:', error);
+                }
+            }
+        }
+
+        // Enhanced play next episode function
+        function playNextEpisode() {
+            if (nextEpisodeData && nextEpisodeData.has_next) {
+                showToast('Loading next episode...');
+                const nextUrl = `/watch/series/${imdbId}/${nextEpisodeData.next_season}/${nextEpisodeData.next_episode}`;
+                setTimeout(() => {
+                    window.location.href = nextUrl;
+                }, 1000);
+            } else {
+                showToast('No next episode available');
+            }
+        }
+
         // Start tracking when page loads
         window.addEventListener('load', () => {
             // Estimate video duration (for movies ~7200s, series ~2700s)
@@ -264,6 +342,9 @@
             creditsStart = videoDuration - 180; // Credits start 3 minutes before end
             
             startProgressTracking();
+            
+            // Load next episode info for series
+            loadNextEpisodeInfo();
             
             // Save initial view
             setTimeout(() => saveProgress(), 5000);

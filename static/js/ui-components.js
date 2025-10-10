@@ -12,13 +12,29 @@ window.addEventListener('scroll', function() {
 
 // Search functionality
 let searchVisible = false;
+let searchTimeout = null;
 
 function toggleSearch() {
     const searchInput = document.getElementById('searchInput');
     const searchContainer = document.querySelector('.search-container');
-    searchVisible = true;
-    searchContainer.classList.add('active');
-    searchInput.focus();
+    
+    if (!searchVisible) {
+        searchVisible = true;
+        searchContainer.classList.add('active');
+        setTimeout(() => {
+            searchInput.focus();
+        }, 100);
+    } else {
+        // If search is visible and has content, perform search
+        if (searchInput.value.trim()) {
+            filterContent();
+        } else {
+            // If no content, close search
+            searchVisible = false;
+            searchContainer.classList.remove('active');
+            searchInput.blur();
+        }
+    }
 }
 
 // Hide search when clicking outside
@@ -26,30 +42,33 @@ function hideSearchIfOutside(event) {
     const searchContainer = document.querySelector('.search-container');
     const searchToggle = document.querySelector('.search-toggle');
     const searchInput = document.getElementById('searchInput');
+    
     if (
+        searchVisible &&
         searchContainer.classList.contains('active') &&
-        !searchContainer.contains(event.target) &&
-        !searchToggle.contains(event.target)
+        !searchContainer.contains(event.target)
     ) {
-        searchContainer.classList.remove('active');
-        searchInput.blur();
-        searchInput.value = '';
-        searchVisible = false;
+        // Only close if input is empty
+        if (!searchInput.value.trim()) {
+            searchContainer.classList.remove('active');
+            searchInput.blur();
+            searchVisible = false;
+        }
     }
 }
 
 document.addEventListener('click', hideSearchIfOutside);
 
-// Close search when clicking outside
-document.addEventListener('click', function(event) {
-    const searchContainer = document.querySelector('.search-container');
-    const searchInput = document.getElementById('searchInput');
-    
-    if (searchVisible && !searchContainer.contains(event.target)) {
-        searchVisible = false;
-        searchContainer.classList.remove('active');
-        searchInput.blur();
-        if (searchInput.value.trim() === '') {
+// Close search on Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const searchContainer = document.querySelector('.search-container');
+        const searchInput = document.getElementById('searchInput');
+        
+        if (searchVisible) {
+            searchVisible = false;
+            searchContainer.classList.remove('active');
+            searchInput.blur();
             searchInput.value = '';
         }
     }

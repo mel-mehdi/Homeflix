@@ -21,6 +21,7 @@
             background: linear-gradient(to bottom, rgba(20, 20, 20, 0.7), #141414),
                         url('{{ series.backdrop_url }}') center/cover;
             border-bottom: 1px solid #333;
+            position: relative;
         }
 
         .breadcrumb {
@@ -43,12 +44,14 @@
             font-size: 3rem;
             font-weight: 700;
             margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
         }
 
         .season-subtitle {
             font-size: 1.5rem;
             color: #ddd;
             margin-bottom: 20px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
         }
 
         .season-overview {
@@ -56,10 +59,13 @@
             line-height: 1.6;
             max-width: 800px;
             color: #ddd;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
         }
 
         .episodes-section {
             padding: 40px 60px;
+            max-width: 1400px;
+            margin: 0 auto;
         }
 
         .section-title {
@@ -80,12 +86,13 @@
             overflow: hidden;
             display: flex;
             cursor: pointer;
-            transition: transform 0.3s, box-shadow 0.3s;
+            transition: transform 0.3s, box-shadow 0.3s, background 0.3s;
         }
 
         .episode-card:hover {
             transform: translateX(10px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+            background: #3a3a3a;
         }
 
         .episode-thumbnail {
@@ -111,33 +118,39 @@
             border-radius: 4px;
             font-weight: 700;
             font-size: 0.9rem;
+            backdrop-filter: blur(5px);
         }
 
         .play-icon {
-            width: 50px;
-            height: 50px;
-            background: rgba(255, 255, 255, 0.9);
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.95);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             opacity: 0;
-            transition: opacity 0.3s;
+            transition: opacity 0.3s, transform 0.3s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
         }
 
         .episode-card:hover .play-icon {
             opacity: 1;
+            transform: scale(1.1);
         }
 
         .play-icon svg {
-            width: 24px;
-            height: 24px;
+            width: 28px;
+            height: 28px;
             margin-left: 3px;
         }
 
         .episode-content {
-            padding: 20px;
+            padding: 20px 25px;
             flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .episode-header {
@@ -151,6 +164,7 @@
             font-size: 1.3rem;
             font-weight: 600;
             margin-bottom: 8px;
+            color: #fff;
         }
 
         .episode-meta {
@@ -159,6 +173,7 @@
             color: #aaa;
             font-size: 0.9rem;
             margin-bottom: 15px;
+            flex-wrap: wrap;
         }
 
         .episode-rating {
@@ -175,6 +190,10 @@
             color: #ccc;
             line-height: 1.6;
             font-size: 0.95rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
         .back-button {
@@ -184,8 +203,8 @@
             background: rgba(0, 0, 0, 0.7);
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
+            padding: 12px 24px;
+            border-radius: 6px;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -193,11 +212,101 @@
             font-size: 1rem;
             font-weight: 600;
             z-index: 100;
-            transition: background 0.3s;
+            transition: background 0.3s, transform 0.2s;
+            backdrop-filter: blur(10px);
         }
 
         .back-button:hover {
             background: rgba(0, 0, 0, 0.9);
+            transform: translateX(-5px);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .season-header {
+                padding: 40px 30px;
+            }
+
+            .episodes-section {
+                padding: 30px 30px;
+            }
+
+            .season-title-main {
+                font-size: 2.5rem;
+            }
+
+            .episode-thumbnail {
+                width: 220px;
+                height: 125px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .season-header {
+                padding: 30px 20px;
+            }
+
+            .episodes-section {
+                padding: 20px 20px;
+            }
+
+            .season-title-main {
+                font-size: 2rem;
+            }
+
+            .season-subtitle {
+                font-size: 1.2rem;
+            }
+
+            .episode-card {
+                flex-direction: column;
+            }
+
+            .episode-card:hover {
+                transform: translateY(-5px);
+            }
+
+            .episode-thumbnail {
+                width: 100%;
+                height: 200px;
+            }
+
+            .episode-content {
+                padding: 20px;
+            }
+
+            .back-button {
+                top: 70px;
+                left: 15px;
+                padding: 10px 18px;
+                font-size: 0.9rem;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .season-title-main {
+                font-size: 1.5rem;
+            }
+
+            .season-subtitle {
+                font-size: 1rem;
+            }
+
+            .season-overview {
+                font-size: 0.95rem;
+            }
+
+            .episode-title {
+                font-size: 1.1rem;
+            }
+
+            .breadcrumb {
+                font-size: 0.85rem;
+            }
         }
     </style>
 </head>
@@ -245,7 +354,7 @@
             
             <div class="episodes-list">
                 {% for episode in season.episodes %}
-                <div class="episode-card" onclick="window.location.href='/watch/series/{{ imdb_id }}/season/{{ season.season_number }}/episode/{{ episode.episode_number }}'">
+                <div class="episode-card" onclick="window.location.href='/watch/series/{{ imdb_id }}/{{ season.season_number }}/{{ episode.episode_number }}'">
                     <div class="episode-thumbnail" {% if episode.still_path %}style="background-image: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)), url('https://image.tmdb.org/t/p/w300{{ episode.still_path }}');"{% endif %}>
                         <div class="episode-number-badge">Episode {{ episode.episode_number }}</div>
                         <div class="play-icon">
