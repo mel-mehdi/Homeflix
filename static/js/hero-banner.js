@@ -12,7 +12,6 @@ let allImagesPreloaded = false;
 function preloadBackdropImages() {
     if (!backdropUrls || backdropUrls.length === 0) return;
     
-    console.log(`Starting to preload ${backdropUrls.length} backdrop images...`);
     let loadedCount = 0;
     
     backdropUrls.forEach((url, index) => {
@@ -20,13 +19,11 @@ function preloadBackdropImages() {
         
         img.onload = () => {
             loadedCount++;
-            console.log(`Preloaded image ${loadedCount}/${backdropUrls.length}: ${url}`);
             preloadedImages.set(url, img);
             
             if (loadedCount === backdropUrls.length) {
                 allImagesPreloaded = true;
-                console.log('✅ All hero banner images preloaded successfully!');
-            }
+        	}
         };
         
         img.onerror = () => {
@@ -41,15 +38,8 @@ function preloadBackdropImages() {
 
 // Initialize hero banner data
 function initializeHeroBannerData(backdrops, series) {
-    console.log('Initializing hero banner data...');
-    console.log('Backdrops:', backdrops);
-    console.log('Series:', series);
-    
     backdropUrls = backdrops || [];
-    heroSeries = series || [];
-    
-    console.log(`Initialized with ${backdropUrls.length} backdrops and ${heroSeries.length} series`);
-    
+    heroSeries = series || []; 
     // Preload images on page load
     if (backdropUrls && backdropUrls.length > 0) {
         preloadBackdropImages();
@@ -67,16 +57,13 @@ function startAutoRotation() {
     // Clear existing interval if any
     if (autoRotationInterval) {
         clearInterval(autoRotationInterval);
-        console.log('Cleared existing auto-rotation interval');
     }
     
     // Only start if we have enough data
     if (backdropUrls && backdropUrls.length > 1 && heroSeries && heroSeries.length > 1) {
-        console.log('Starting auto-rotation interval (8 seconds)');
         autoRotationInterval = setInterval(() => {
             currentBackdropIndex = (currentBackdropIndex + 1) % Math.min(backdropUrls.length, heroSeries.length);
-            console.log(`Auto-rotating to index: ${currentBackdropIndex}`);
-            updateHeroContent(currentBackdropIndex);
+        	updateHeroContent(currentBackdropIndex);
             // Update navigation button states after auto-rotation
             updateHeroNavigationButtons();
         }, 8000);
@@ -85,9 +72,6 @@ function startAutoRotation() {
 
 // Update hero banner content to match the current featured series
 function updateHeroContent(index) {
-    console.log(`updateHeroContent called with index: ${index}`);
-    console.log(`Total backdrops: ${backdropUrls.length}, Total series: ${heroSeries.length}`);
-    
     const heroBanner = document.querySelector('.hero-banner');
     const heroInfo = document.querySelector('.hero-info');
     const series = heroSeries[index];
@@ -106,25 +90,21 @@ function updateHeroContent(index) {
         console.error('Hero info element not found');
         return;
     }
-    
-    console.log(`Updating hero content to series: ${series.title}`);
+
     
     // Update background FIRST before fading out content
     if (backdropUrls[index]) {
         const imageUrl = backdropUrls[index];
-        console.log(`Setting background image to: ${imageUrl}`);
         const preloadedImg = preloadedImages.get(imageUrl);
         
         // Check if image is preloaded and ready
         if (preloadedImg && preloadedImg.complete && preloadedImg.naturalHeight !== 0) {
-            console.log('✅ Using preloaded image - instant display');
             // Apply immediately with smooth transition
             heroBanner.style.transition = 'background-image 0.5s ease-in-out';
             heroBanner.style.backgroundImage = `url('${imageUrl}')`;
             heroBanner.style.backgroundSize = 'cover';
             heroBanner.style.backgroundPosition = 'center';
         } else {
-            console.log('⚠️ Image not fully preloaded yet, applying anyway');
             heroBanner.style.transition = 'background-image 0.5s ease-in-out';
             heroBanner.style.backgroundImage = `url('${imageUrl}')`;
             heroBanner.style.backgroundSize = 'cover';
@@ -222,22 +202,18 @@ function updateHeroContent(index) {
         
         // Preload next image
         if (backdropUrls[nextIndex] && !preloadedImages.has(backdropUrls[nextIndex])) {
-            console.log(`Preloading next image at index ${nextIndex}`);
             const nextImg = new Image();
             nextImg.onload = () => {
                 preloadedImages.set(backdropUrls[nextIndex], nextImg);
-                console.log(`✅ Next image preloaded: ${backdropUrls[nextIndex]}`);
             };
             nextImg.src = backdropUrls[nextIndex];
         }
         
         // Preload previous image
         if (backdropUrls[prevIndex] && !preloadedImages.has(backdropUrls[prevIndex])) {
-            console.log(`Preloading previous image at index ${prevIndex}`);
             const prevImg = new Image();
             prevImg.onload = () => {
                 preloadedImages.set(backdropUrls[prevIndex], prevImg);
-                console.log(`✅ Previous image preloaded: ${backdropUrls[prevIndex]}`);
             };
             prevImg.src = backdropUrls[prevIndex];
         }
@@ -420,13 +396,11 @@ function initializeHeroBannerNavigation() {
     const heroNextBtn = document.getElementById('heroNextBtn');
     
     if (!heroPrevBtn || !heroNextBtn) {
-        console.log('Hero navigation buttons not found');
         return;
     }
     
     // Check if we have enough data for navigation
     if (!backdropUrls || !heroSeries || backdropUrls.length <= 1 || heroSeries.length <= 1) {
-        console.log('Not enough hero data for navigation - buttons will remain hidden');
         // Don't set visibility or display, let CSS opacity handle it
         // Just add inactive class so they can't be clicked
         heroPrevBtn.classList.add('inactive');
@@ -436,14 +410,12 @@ function initializeHeroBannerNavigation() {
         return;
     }
     
-    console.log(`Hero navigation initialized with ${backdropUrls.length} backdrops and ${heroSeries.length} series`);
     
     // Navigate to previous hero
     heroPrevBtn.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
         
-        console.log(`Prev button clicked. Current index: ${currentBackdropIndex}`);
         
         // Check if we can navigate (don't use disabled property)
         if (currentBackdropIndex > 0 && !heroPrevBtn.classList.contains('inactive')) {
@@ -452,7 +424,6 @@ function initializeHeroBannerNavigation() {
             setTimeout(() => heroPrevBtn.classList.remove('flash'), 500);
             
             currentBackdropIndex--;
-            console.log(`Navigating to previous. New index: ${currentBackdropIndex}`);
             updateHeroContent(currentBackdropIndex);
             updateHeroNavigationButtons();
             
@@ -466,9 +437,7 @@ function initializeHeroBannerNavigation() {
         e.preventDefault();
         e.stopPropagation();
         const maxIndex = Math.min(backdropUrls.length, heroSeries.length) - 1;
-        
-        console.log(`Next button clicked. Current index: ${currentBackdropIndex}, Max index: ${maxIndex}`);
-     
+       
         // Check if we can navigate (don't use disabled property)
         if (currentBackdropIndex < maxIndex && !heroNextBtn.classList.contains('inactive')) {
             // Add flash effect
@@ -476,7 +445,6 @@ function initializeHeroBannerNavigation() {
             setTimeout(() => heroNextBtn.classList.remove('flash'), 500);
             
             currentBackdropIndex++;
-            console.log(`Navigating to next. New index: ${currentBackdropIndex}`);
             updateHeroContent(currentBackdropIndex);
             updateHeroNavigationButtons();
             
@@ -500,8 +468,7 @@ function updateHeroNavigationButtons() {
     
     const maxIndex = Math.min(backdropUrls.length, heroSeries.length) - 1;
     
-    console.log(`Updating nav buttons: currentIndex=${currentBackdropIndex}, maxIndex=${maxIndex}`);
-
+    
     // Update prev button - use CSS class instead of disabled attribute
     if (currentBackdropIndex === 0) {
         heroPrevBtn.classList.add('inactive');

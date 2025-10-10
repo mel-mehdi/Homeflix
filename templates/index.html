@@ -32,6 +32,7 @@
                     </svg>
                 </button>
                 <input type="text" id="searchInput" placeholder="Search titles, people, genres..." class="search-input" autocomplete="off" spellcheck="false">
+                <div class="search-suggestions" id="searchSuggestions"></div>
             </div>
             <div class="profile-menu">
                 <div class="profile-avatar">
@@ -428,12 +429,18 @@
     
     <!-- Initialize page data AFTER all JS modules are loaded -->
     <script>
+        
         // Initialize data from Flask template
         if (typeof initializePaginationData === 'function') {
             initializePaginationData({{ movie_page }}, {{ series_page }}, "{{ search_query|default('') }}");
         }
         if (typeof initializeHeroBannerData === 'function') {
             initializeHeroBannerData({{ backdrop_urls | tojson }}, {{ trending_movies | tojson }});
+        }
+        
+        
+        if (typeof initializeSearch === 'function') {
+            initializeSearch();
         }
     </script>
 </body>

@@ -205,5 +205,5 @@ const homeflixApp = {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Myflix app initialized');
+  
 });

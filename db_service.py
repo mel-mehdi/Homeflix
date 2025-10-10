@@ -1,5 +1,5 @@
 from database import Movie, TVShow, get_db, close_db, init_db, MyList
-from sqlalchemy import or_, and_, func
+from sqlalchemy import or_, and_, func, text
 from datetime import datetime, timedelta
 import requests
 import time
@@ -83,16 +83,50 @@ class DatabaseService:
         return [movie.to_dict() for movie in movies]
     
     def search_movies(self, query, page=1, per_page=15):
-        """Search movies in database"""
+        """Search movies in database using FTS for ultra-fast results"""
         offset = (page - 1) * per_page
-        search_term = f"%{query}%"
-        movies = self.db.query(Movie)\
-            .filter(Movie.title.ilike(search_term))\
-            .order_by(Movie.popularity.desc())\
-            .offset(offset)\
-            .limit(per_page)\
-            .all()
-        return [movie.to_dict() for movie in movies]
+        
+        # Use FTS5 for lightning-fast full-text search
+        try:
+            # Escape special FTS characters and add prefix matching
+            # Use * for prefix matching (e.g., "spider*" matches "spider-man")
+            fts_query = query.replace('"', '""').replace('*', '')
+            if len(fts_query) >= 2:
+                fts_query = f'"{fts_query}"*'  # Quoted prefix search
+            
+            # FTS5 search with prefix matching for autocomplete
+            sql = text("""
+                SELECT m.* FROM movies m
+                INNER JOIN movies_fts fts ON m.id = fts.rowid
+                WHERE movies_fts MATCH :query
+                ORDER BY 
+                    CASE WHEN LOWER(m.title) LIKE :starts_with THEN 0 ELSE 1 END,
+                    m.popularity DESC
+                LIMIT :limit OFFSET :offset
+            """)
+            result = self.db.execute(sql, {
+                'query': fts_query,
+                'starts_with': f"{query.lower()}%",
+                'limit': per_page,
+                'offset': offset
+            })
+            
+            movies = []
+            for row in result:
+                row_dict = dict(row._mapping)
+                movie = Movie(**row_dict)
+                movies.append(movie.to_dict())
+            return movies
+        except Exception as e:
+            # Fallback to LIKE search if FTS fails
+            search_term = f"%{query}%"
+            movies = self.db.query(Movie)\
+                .filter(Movie.title.ilike(search_term))\
+                .order_by(Movie.popularity.desc())\
+                .offset(offset)\
+                .limit(per_page)\
+                .all()
+            return [movie.to_dict() for movie in movies]
     
     # TV Show operations
     def get_tvshow_by_imdb_id(self, imdb_id):
@@ -161,16 +195,50 @@ class DatabaseService:
         return [tvshow.to_dict() for tvshow in tvshows]
     
     def search_tvshows(self, query, page=1, per_page=15):
-        """Search TV shows in database"""
+        """Search TV shows in database using FTS for ultra-fast results"""
         offset = (page - 1) * per_page
-        search_term = f"%{query}%"
-        tvshows = self.db.query(TVShow)\
-            .filter(TVShow.title.ilike(search_term))\
-            .order_by(TVShow.popularity.desc())\
-            .offset(offset)\
-            .limit(per_page)\
-            .all()
-        return [tvshow.to_dict() for tvshow in tvshows]
+        
+        # Use FTS5 for lightning-fast full-text search
+        try:
+            # Escape special FTS characters and add prefix matching
+            # Use * for prefix matching (e.g., "breaking*" matches "breaking bad")
+            fts_query = query.replace('"', '""').replace('*', '')
+            if len(fts_query) >= 2:
+                fts_query = f'"{fts_query}"*'  # Quoted prefix search
+            
+            # FTS5 search with prefix matching for autocomplete
+            sql = text("""
+                SELECT t.* FROM tvshows t
+                INNER JOIN tvshows_fts fts ON t.id = fts.rowid
+                WHERE tvshows_fts MATCH :query
+                ORDER BY 
+                    CASE WHEN LOWER(t.title) LIKE :starts_with THEN 0 ELSE 1 END,
+                    t.popularity DESC
+                LIMIT :limit OFFSET :offset
+            """)
+            result = self.db.execute(sql, {
+                'query': fts_query,
+                'starts_with': f"{query.lower()}%",
+                'limit': per_page,
+                'offset': offset
+            })
+            
+            tvshows = []
+            for row in result:
+                row_dict = dict(row._mapping)
+                tvshow = TVShow(**row_dict)
+                tvshows.append(tvshow.to_dict())
+            return tvshows
+        except Exception as e:
+            # Fallback to LIKE search if FTS fails
+            search_term = f"%{query}%"
+            tvshows = self.db.query(TVShow)\
+                .filter(TVShow.title.ilike(search_term))\
+                .order_by(TVShow.popularity.desc())\
+                .offset(offset)\
+                .limit(per_page)\
+                .all()
+            return [tvshow.to_dict() for tvshow in tvshows]
     
     def get_total_movies(self):
         """Get total number of movies"""

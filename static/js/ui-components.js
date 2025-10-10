@@ -42,6 +42,7 @@ function hideSearchIfOutside(event) {
     const searchContainer = document.querySelector('.search-container');
     const searchToggle = document.querySelector('.search-toggle');
     const searchInput = document.getElementById('searchInput');
+    const suggestionsContainer = document.getElementById('searchSuggestions');
     
     if (
         searchVisible &&
@@ -53,7 +54,13 @@ function hideSearchIfOutside(event) {
             searchContainer.classList.remove('active');
             searchInput.blur();
             searchVisible = false;
+            hideSearchSuggestions();
         }
+    }
+    
+    // Also hide suggestions if clicking outside search container
+    if (suggestionsContainer && !searchContainer.contains(event.target)) {
+        hideSearchSuggestions();
     }
 }
 
@@ -70,6 +77,7 @@ document.addEventListener('keydown', function(event) {
             searchContainer.classList.remove('active');
             searchInput.blur();
             searchInput.value = '';
+            hideSearchSuggestions();
         }
     }
 });
@@ -92,15 +100,185 @@ function filterContent() {
     }, 500);
 }
 
-// Initialize search input enter key
+// Initialize search input enter key and live suggestions
 function initializeSearch() {
     const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.addEventListener('keyup', function(event) {
-            if (event.key === 'Enter') {
-                filterContent();
-            }
+    const searchSuggestions = document.getElementById('searchSuggestions');
+    
+    if (!searchInput) {
+        console.error('❌ searchInput element not found!');
+        return;
+    }
+    
+    if (!searchSuggestions) {
+        console.error('❌ searchSuggestions element not found!');
+        return;
+    }
+    
+    // Attach keyup event
+    searchInput.addEventListener('keyup', function(event) {
+        if (event.key === 'Enter') {
+            filterContent();
+        } else if (event.key === 'Escape') {
+            // Escape key handling is already in the global listener
+            return;
+        } else {
+            // Trigger live search suggestions
+            handleSearchInput();
+        }
+    });
+    
+    // Also trigger on input event for better responsiveness
+    searchInput.addEventListener('input', function(event) {
+        handleSearchInput();
+    });
+}
+
+// Handle search input and fetch suggestions
+let searchDebounceTimer = null;
+let currentSearchRequest = null;
+
+function handleSearchInput() {
+    const searchInput = document.getElementById('searchInput');
+    const query = searchInput.value.trim();
+    
+    // Clear existing timer
+    if (searchDebounceTimer) {
+        clearTimeout(searchDebounceTimer);
+    }
+    
+    // Cancel any ongoing request
+    if (currentSearchRequest) {
+        currentSearchRequest.abort();
+    }
+    
+    // If query is empty, hide suggestions
+    if (query === '' || query.length < 2) {
+        hideSearchSuggestions();
+        return;
+    }
+    
+    // Debounce the search to avoid too many requests
+    searchDebounceTimer = setTimeout(() => {
+        fetchSearchSuggestions(query);
+    }, 300); // Wait 300ms after user stops typing
+}
+
+// Fetch search suggestions from the backend
+function fetchSearchSuggestions(query) {
+    const suggestionsContainer = document.getElementById('searchSuggestions');
+    
+    
+    if (!suggestionsContainer) {
+        console.error('❌ Search suggestions container not found');
+        return;
+    }
+    
+    // Create new AbortController for this request
+    const controller = new AbortController();
+    currentSearchRequest = controller;
+    
+    // Show loading state
+    suggestionsContainer.innerHTML = '<div class="suggestion-item loading">Searching...</div>';
+    suggestionsContainer.classList.add('show');
+    
+    const apiUrl = `/api/search_suggestions?q=${encodeURIComponent(query)}`;
+    
+    fetch(apiUrl, {
+        signal: controller.signal
+    })
+    .then(response => {
+        return response.json();
+    })
+    .then(data => {
+        displaySearchSuggestions(data.results, query);
+        currentSearchRequest = null;
+    })
+    .catch(error => {
+        if (error.name !== 'AbortError') {
+            console.error('❌ Error fetching suggestions:', error);
+            suggestionsContainer.innerHTML = '<div class="suggestion-item error">Error loading suggestions</div>';
+        }
+        currentSearchRequest = null;
+    });
+}
+
+// Display search suggestions in the dropdown
+function displaySearchSuggestions(results, query) {
+    const suggestionsContainer = document.getElementById('searchSuggestions');
+    
+    if (!suggestionsContainer) {
+        console.error('❌ Search suggestions container not found');
+        return;
+    }
+    
+    if (!results || results.length === 0) {
+        suggestionsContainer.innerHTML = '<div class="suggestion-item no-results">No results found</div>';
+        suggestionsContainer.classList.add('show');
+        return;
+    }
+    
+    // Clear existing content
+    suggestionsContainer.innerHTML = '';
+    
+    // Add each suggestion
+    results.forEach((item, index) => {
+        
+        const suggestionItem = document.createElement('div');
+        suggestionItem.className = 'suggestion-item';
+        
+        // Create icon based on type
+        const icon = item.type === 'movie' 
+            ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 4H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 2v4M17 2v4M2 10h20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+            : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 7h-5M20 17h-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="2" y="3" width="12" height="18" rx="2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        
+        // Highlight matching text
+        const title = highlightMatch(item.title, query);
+        const year = item.year ? `<span class="suggestion-year">(${item.year})</span>` : '';
+        
+        suggestionItem.innerHTML = `
+            <span class="suggestion-icon">${icon}</span>
+            <span class="suggestion-title">${title} ${year}</span>
+            <span class="suggestion-type">${item.type}</span>
+        `;
+        
+        // Add click handler
+        suggestionItem.addEventListener('click', () => {
+            navigateToItem(item);
         });
+        
+        suggestionsContainer.appendChild(suggestionItem);
+    });
+    
+    suggestionsContainer.classList.add('show');
+}
+
+// Highlight matching text in the title
+function highlightMatch(text, query) {
+    const regex = new RegExp(`(${escapeRegex(query)})`, 'gi');
+    return text.replace(regex, '<strong>$1</strong>');
+}
+
+// Escape special regex characters
+function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Navigate to the selected item
+function navigateToItem(item) {
+    if (item.type === 'movie') {
+        window.location.href = `/movie/${item.id || item.imdb_id}`;
+    } else if (item.type === 'series') {
+        window.location.href = `/series/${item.id || item.imdb_id}`;
+    }
+}
+
+// Hide search suggestions
+function hideSearchSuggestions() {
+    const suggestionsContainer = document.getElementById('searchSuggestions');
+    if (suggestionsContainer) {
+        suggestionsContainer.classList.remove('show');
+        suggestionsContainer.innerHTML = '';
     }
 }
 

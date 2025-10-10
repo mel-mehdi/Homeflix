@@ -12,7 +12,7 @@ class Movie(Base):
     id = Column(Integer, primary_key=True)
     imdb_id = Column(String(20), unique=True, index=True)
     tmdb_id = Column(Integer, unique=True, index=True)
-    title = Column(String(255), nullable=False)
+    title = Column(String(255), nullable=False, index=True)  # Add index for fast search
     overview = Column(Text)
     release_date = Column(String(20))
     year = Column(String(4))
@@ -54,7 +54,7 @@ class TVShow(Base):
     id = Column(Integer, primary_key=True)
     imdb_id = Column(String(20), unique=True, index=True)
     tmdb_id = Column(Integer, unique=True, index=True)
-    title = Column(String(255), nullable=False)
+    title = Column(String(255), nullable=False, index=True)  # Add index for fast search
     overview = Column(Text)
     first_air_date = Column(String(20))
     year = Column(String(4))

@@ -45,12 +45,9 @@ function showMyList() {
     fetch('/api/my-list')
         .then(response => response.json())
         .then(data => {
-            console.log('My List data:', data); // Debug log
             if (data.success && data.items && data.items.length > 0) {
-                console.log('Opening modal with', data.items.length, 'items'); // Debug log
                 openMyListModal(data.items);
             } else {
-                console.log('List is empty or no items'); // Debug log
                 // No items in My List
                 if (typeof homeflixApp !== 'undefined') {
                     homeflixApp.showNotification('Your list is empty! Click the + button on any movie or show to add it to your list.', 'info');

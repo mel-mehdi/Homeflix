@@ -941,6 +941,61 @@ def get_next_episode(imdb_id, season, episode):
         logger.error(f"Error getting next episode for {imdb_id} S{season}E{episode}: {e}")
         return jsonify({'has_next': False})
 
+@app.route('/api/search_suggestions')
+def search_suggestions():
+    """Get search suggestions as user types - ULTRA FAST FTS search"""
+    query = request.args.get('q', '').strip()
+    if not query or len(query) < 2:
+        return jsonify({'results': []})
+    
+    # For very short queries (2 chars), require exact start match for speed
+    if len(query) == 2:
+        per_page = 2  # Reduce results for very short queries
+    else:
+        per_page = 3
+    
+    try:
+        suggestions = []
+        
+        # Search local database using FTS for instant results
+        with DatabaseService() as db_service:
+            movies = db_service.search_movies(query, page=1, per_page=per_page)
+            series = db_service.search_tvshows(query, page=1, per_page=per_page)
+        
+        # Add movies to suggestions
+        for movie in movies:
+            suggestions.append({
+                'id': movie.get('imdb_id'),
+                'title': movie.get('title'),
+                'type': 'movie',
+                'year': movie.get('release_date', '')[:4] if movie.get('release_date') else '',
+                'poster_url': movie.get('poster_url'),
+                'url': f"/movie/{movie.get('imdb_id')}"
+            })
+        
+        # Add series to suggestions
+        for show in series:
+            suggestions.append({
+                'id': show.get('imdb_id'),
+                'title': show.get('title'),
+                'type': 'series',
+                'year': show.get('first_air_date', '')[:4] if show.get('first_air_date') else '',
+                'poster_url': show.get('poster_url'),
+                'url': f"/series/{show.get('imdb_id')}"
+            })
+        
+        # Sort by relevance (title starts with query) and limit to 6 results
+        suggestions.sort(key=lambda x: (
+            not x['title'].lower().startswith(query.lower()),  # Prioritize starts-with matches
+            x['title'].lower()  # Then alphabetically
+        ))
+        
+        return jsonify({'results': suggestions[:6]})
+        
+    except Exception as e:
+        logger.error(f"Error in search_suggestions: {e}")
+        return jsonify({'results': []})
+
 if __name__ == '__main__':
     network_ip = get_network_ip()
     # Server starting silently - access at http://localhost:5000 or http://<your-ip>:5000
