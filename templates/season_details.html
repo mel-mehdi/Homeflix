@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ series.title }} - {{ season.name }} - Myflix</title>
     <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/modal.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -316,9 +317,6 @@
             <a href="/" class="netflix-logo">MYFLIX</a>
             <nav class="main-nav">
                 <a href="/" class="nav-link">Home</a>
-                <a href="javascript:void(0)" class="nav-link" onclick="filterByType('tv')">TV Shows</a>
-                <a href="javascript:void(0)" class="nav-link" onclick="filterByType('movie')">Movies</a>
-                <a href="javascript:void(0)" class="nav-link" onclick="showNewPopular()">New & Popular</a>
                 <a href="javascript:void(0)" class="nav-link" onclick="showMyList()">My List</a>
             </nav>
         </div>
@@ -395,6 +393,8 @@
         </div>
     </div>
 
+    <!-- Shared navigation and My List functionality -->
+    <script src="/static/js/my-list.js"></script>
     <script>
         // Navbar scroll effect
         window.addEventListener('scroll', function() {

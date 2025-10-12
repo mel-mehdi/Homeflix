@@ -1,5 +1,14 @@
 // My List Functionality
 
+// Navigation functionality for detail pages
+function filterByType(type) {
+    window.location.href = '/?filter=' + type;
+}
+
+function showNewPopular() {
+    window.location.href = '/?view=new-popular';
+}
+
 // Initialize My List button states
 async function initializeMyListButtons() {
     try {
@@ -209,4 +218,38 @@ function removeFromMyListModal(type, id, title) {
             homeflixApp.showNotification('Failed to remove from My List', 'error');
         }
     });
+}
+
+// Add to My List functionality for detail pages
+async function addToMyList(type, id, tmdbId, title, button) {
+    try {
+        const isAdded = button.getAttribute('data-added') === 'true';
+        const action = isAdded ? 'remove' : 'add';
+        
+        const response = await fetch('/api/my-list', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: action,
+                type: type,
+                id: id,
+                tmdb_id: tmdbId,
+                title: title
+            })
+        });
+
+        if (response.ok) {
+            if (action === 'add') {
+                button.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor"/></svg> My List';
+                button.setAttribute('data-added', 'true');
+            } else {
+                button.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor"/></svg> My List';
+                button.setAttribute('data-added', 'false');
+            }
+        }
+    } catch (error) {
+        console.error('Failed to update My List:', error);
+    }
 }

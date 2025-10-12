@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ movie.title }} - Myflix</title>
     <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/modal.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -235,9 +236,6 @@
             <a href="/" class="netflix-logo">MYFLIX</a>
             <nav class="main-nav">
                 <a href="/" class="nav-link">Home</a>
-                <a href="javascript:void(0)" class="nav-link" onclick="filterByType('tv')">TV Shows</a>
-                <a href="javascript:void(0)" class="nav-link" onclick="filterByType('movie')">Movies</a>
-                <a href="javascript:void(0)" class="nav-link" onclick="showNewPopular()">New & Popular</a>
                 <a href="javascript:void(0)" class="nav-link" onclick="showMyList()">My List</a>
             </nav>
         </div>
@@ -382,36 +380,7 @@
         </div>
     </div>
 
-    <script>
-        // Add to My List functionality
-        async function addToMyList(type, id, tmdbId, title, button) {
-            try {
-                const response = await fetch('/api/my-list', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'add',
-                        type: type,
-                        id: id,
-                        tmdb_id: tmdbId,
-                        title: title
-                    })
-                });
-
-                if (response.ok) {
-                    button.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor"/></svg> Added';
-                    button.style.background = 'rgba(46, 125, 50, 0.8)';
-                    setTimeout(() => {
-                        button.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor"/></svg> My List';
-                        button.style.background = '';
-                    }, 2000);
-                }
-            } catch (error) {
-                console.error('Failed to add to My List:', error);
-            }
-        }
-    </script>
+    <!-- Shared navigation and My List functionality -->
+    <script src="/static/js/my-list.js"></script>
 </body>
 </html>
