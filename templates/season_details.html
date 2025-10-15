@@ -6,6 +6,7 @@
     <title>{{ series.title }} - {{ season.name }} - Myflix</title>
     <link rel="stylesheet" href="/css/index.css">
     <link rel="stylesheet" href="/css/modal.css">
+    <link rel="stylesheet" href="/css/watch-mark.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -88,6 +89,7 @@
             display: flex;
             cursor: pointer;
             transition: transform 0.3s, box-shadow 0.3s, background 0.3s;
+            position: relative;
         }
 
         .episode-card:hover {
@@ -120,6 +122,17 @@
             font-weight: 700;
             font-size: 0.9rem;
             backdrop-filter: blur(5px);
+        }
+
+        .episode-watch-mark {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+        }
+
+        .episode-card:hover .episode-watch-mark {
+            opacity: 1;
         }
 
         .play-icon {
@@ -352,9 +365,20 @@
             
             <div class="episodes-list">
                 {% for episode in season.episodes %}
-                <div class="episode-card" onclick="window.location.href='/watch/series/{{ imdb_id }}/{{ season.season_number }}/{{ episode.episode_number }}'">
-                    <div class="episode-thumbnail" {% if episode.still_path %}style="background-image: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)), url('https://image.tmdb.org/t/p/w300{{ episode.still_path }}');"{% endif %}>
+                <div class="episode-card" data-episode-id="{{ episode.episode_number }}">
+                    <div class="episode-thumbnail" {% if episode.still_path %}style="background-image: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)), url('https://image.tmdb.org/t/p/w300{{ episode.still_path }}');"{% endif %} onclick="window.location.href='/watch/series/{{ imdb_id }}/{{ season.season_number }}/{{ episode.episode_number }}'">
                         <div class="episode-number-badge">Episode {{ episode.episode_number }}</div>
+                        <div class="episode-watch-mark">
+                            <button class="watch-mark-btn-small" 
+                                    data-watched="false" 
+                                    data-episode="{{ episode.episode_number }}"
+                                    onclick="event.stopPropagation(); watchMark.toggleWatched('series', '{{ imdb_id }}', {{ tmdb_id }}, '{{ series.title }} - S{{ season.season_number }}E{{ episode.episode_number }}', this, {{ season.season_number }}, {{ episode.episode_number }})"
+                                    title="Mark as Watched">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" stroke="currentColor" stroke-width="2"/>
+                                </svg>
+                            </button>
+                        </div>
                         <div class="play-icon">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M8 5v14l11-7z" fill="black"/>
@@ -395,6 +419,7 @@
 
     <!-- Shared navigation and My List functionality -->
     <script src="/static/js/my-list.js"></script>
+    <script src="/static/js/watch-mark.js"></script>
     <script>
         // Navbar scroll effect
         window.addEventListener('scroll', function() {
@@ -404,6 +429,18 @@
             } else {
                 navbar.style.background = 'transparent';
             }
+        });
+
+        // Initialize watched status for all episodes
+        document.addEventListener('DOMContentLoaded', function() {
+            const episodeCards = document.querySelectorAll('.episode-card');
+            episodeCards.forEach(card => {
+                const button = card.querySelector('.watch-mark-btn-small');
+                if (button) {
+                    const episodeNum = button.dataset.episode;
+                    watchMark.checkWatchedStatus('series', '{{ imdb_id }}', {{ season.season_number }}, parseInt(episodeNum), button);
+                }
+            });
         });
     </script>
 </body>

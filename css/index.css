@@ -15,6 +15,35 @@ body {
     line-height: 1.4;
     font-size: 1.4rem;
     overflow-x: hidden;
+    cursor: default; /* Default cursor instead of text cursor */
+    -webkit-user-select: none; /* Prevent text selection on Safari */
+    -moz-user-select: none; /* Prevent text selection on Firefox */
+    -ms-user-select: none; /* Prevent text selection on IE/Edge */
+    user-select: none; /* Prevent text selection */
+}
+
+/* Allow text selection only for specific elements */
+input,
+textarea,
+[contenteditable="true"],
+.selectable-text {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+    cursor: text;
+}
+
+/* Ensure all clickable elements have pointer cursor */
+button,
+a,
+.clickable,
+[onclick] {
+    cursor: pointer !important;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 /* Netflix Navbar */
@@ -139,6 +168,12 @@ body {
     appearance: none;
     box-shadow: none;
     font-family: 'Netflix Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    caret-color: #ffffff; /* Cursor color when active */
+}
+
+/* Hide cursor when input loses focus */
+.search-input:not(:focus) {
+    caret-color: transparent;
 }
 
 .search-input::placeholder {

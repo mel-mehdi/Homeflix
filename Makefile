@@ -8,7 +8,7 @@ update:
 	python3 sync_data.py
 
 # Docker commands
-restart: down build up
+re: down build up
 
 build:
 	docker-compose build

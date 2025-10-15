@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }} - Myflix</title>
     <link rel="stylesheet" href="/css/player.css">
+    <link rel="stylesheet" href="/css/watch-mark.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -12,7 +13,25 @@
 <body>
     <div class="player-container">
         <div class="video-wrapper">
-            <iframe src="{{ embed_url }}" 
+            <!-- Loading Indicator -->
+            <div class="loading-indicator" id="loadingIndicator">
+                <div class="loader"></div>
+                <p>Loading video...</p>
+                <p class="loading-source" id="loadingSource">Trying source 1...</p>
+            </div>
+            
+            <!-- Error Message -->
+            <div class="error-message" id="errorMessage" style="display: none;">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="currentColor"/>
+                </svg>
+                <h2>Video not available</h2>
+                <p>The video source is currently unavailable. Please try a different source.</p>
+                <button class="retry-button" onclick="showSourceMenu()">Try Different Source</button>
+            </div>
+            
+            <iframe id="videoIframe"
+                    src="{{ embed_url }}" 
                     width="100%" 
                     height="100%" 
                     frameborder="0" 
@@ -20,7 +39,9 @@
                     webkitallowfullscreen
                     mozallowfullscreen
                     allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                    referrerpolicy="origin"></iframe>
+                    referrerpolicy="origin"
+                    onload="hideLoading()"
+                    onerror="showError()"></iframe>
             
             <div class="player-controls" id="topControls">
                 <div class="top-bar">
@@ -49,6 +70,7 @@
                     <h3>Select Video Source</h3>
                     <button class="close-menu-btn" onclick="hideSourceMenu()">✕</button>
                 </div>
+                <p class="source-info-top">If the video doesn't play, try switching to a different source. Each source may have different availability.</p>
                 <div class="source-list">
                     {% if embed_sources %}
                         {% for source in embed_sources %}
@@ -58,12 +80,46 @@
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
                             </svg>
-                            Source {{ loop.index }}
+                            <span class="source-info-text">
+                                <span class="source-name">Source {{ loop.index }}</span>
+                                <span class="source-domain">{{ source.split('/')[2] }}</span>
+                            </span>
+                            <span class="source-status" id="status-{{ loop.index }}">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="10" fill="currentColor"/>
+                                </svg>
+                            </span>
                         </button>
                         {% endfor %}
                     {% endif %}
                 </div>
-                <p class="source-info">Try a different source if the video doesn't play</p>
+                <div class="troubleshooting-tips">
+                    <p class="tip-title">💡 Troubleshooting Tips:</p>
+                    <ul>
+                        <li>Wait a few seconds for the video to buffer</li>
+                        <li>Try a different source if one doesn't work</li>
+                        <li>Check your internet connection</li>
+                        <li>Disable ad-blockers if video won't load</li>
+                        <li>Try refreshing the page</li>
+                    </ul>
+                </div>
+                <div class="direct-links">
+                    <p class="tip-title">🔗 Still not working? Try these direct links:</p>
+                    <div class="direct-link-buttons">
+                        {% if tmdb_id %}
+                        <a href="https://vidsrc.to/embed/{{ 'movie' if type == 'movie' else 'tv' }}/{{ tmdb_id }}{% if season %}/{{ season }}/{{ episode }}{% endif %}" 
+                           target="_blank" 
+                           class="direct-link-btn">
+                            Open VidSrc.to
+                        </a>
+                        <a href="https://www.2embed.cc/{% if type == 'movie' %}embed{% else %}embedtv{% endif %}/{{ imdb_id }}{% if season %}&s={{ season }}&e={{ episode }}{% endif %}" 
+                           target="_blank" 
+                           class="direct-link-btn">
+                            Open 2Embed
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
 
             <!-- Skip Intro Button -->
@@ -229,19 +285,108 @@
         }
         
         function saveProgress() {
-            fetch('/api/continue_watching', {
+            const progressData = {
+                type: videoType === 'episode' ? 'series' : videoType,
+                id: videoId,
+                imdb_id: videoId,
+                tmdb_id: tmdbId,
+                title: videoTitle,
+                progress: Math.floor(currentProgress),
+                duration: Math.floor(videoDuration || 3600)
+            };
+            
+            // Add episode info for series
+            if (videoType === 'episode' && typeof season !== 'undefined' && typeof episode !== 'undefined') {
+                progressData.season = season;
+                progressData.episode = episode;
+            }
+            
+            fetch('/api/watch_progress', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    type: videoType,
-                    id: videoId,
-                    title: videoTitle,
-                    progress: currentProgress,
-                    duration: videoDuration || 3600,
-                    poster_url: ''
-                })
-            }).catch(err => console.log('Failed to save progress:', err));
+                body: JSON.stringify(progressData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Progress saved:', data.progress_percent + '%');
+                    if (data.is_completed) {
+                        console.log('Marked as completed!');
+                    }
+                }
+            })
+            .catch(err => console.log('Failed to save progress:', err));
         }
+        
+        // Load saved progress on page load
+        function loadSavedProgress() {
+            let url = `/api/watch_progress/${videoType === 'episode' ? 'series' : videoType}/${videoId}`;
+            
+            // Add episode params for series
+            if (videoType === 'episode' && typeof season !== 'undefined' && typeof episode !== 'undefined') {
+                url += `?season=${season}&episode=${episode}`;
+            }
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.progress && data.progress.progress_seconds > 0) {
+                        const savedProgress = data.progress;
+                        const progressPercent = savedProgress.progress_percent;
+                        
+                        // Only resume if not completed and progress is significant (>5% but <90%)
+                        if (!savedProgress.is_completed && progressPercent > 5 && progressPercent < 90) {
+                            const minutes = Math.floor(savedProgress.progress_seconds / 60);
+                            const seconds = savedProgress.progress_seconds % 60;
+                            const timeStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+                            
+                            showResumePrompt(savedProgress.progress_seconds, timeStr, progressPercent);
+                        }
+                    }
+                })
+                .catch(err => console.log('Failed to load progress:', err));
+        }
+        
+        function showResumePrompt(progressSeconds, timeStr, progressPercent) {
+            const prompt = document.createElement('div');
+            prompt.className = 'resume-prompt';
+            prompt.innerHTML = `
+                <div class="resume-content">
+                    <p>Resume from ${timeStr}? (${progressPercent.toFixed(0)}% watched)</p>
+                    <div class="resume-buttons">
+                        <button onclick="resumePlayback(${progressSeconds})" class="btn-resume">Resume</button>
+                        <button onclick="dismissResumePrompt()" class="btn-start-over">Start Over</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(prompt);
+            
+            setTimeout(() => prompt.classList.add('show'), 100);
+        }
+        
+        window.resumePlayback = function(seconds) {
+            // Try to set the iframe's video position
+            // This works with some embed players that support URL parameters
+            const iframe = document.querySelector('iframe');
+            if (iframe && iframe.src) {
+                const url = new URL(iframe.src);
+                url.searchParams.set('t', seconds);
+                iframe.src = url.toString();
+            }
+            dismissResumePrompt();
+            showToast('Resuming playback...');
+        };
+        
+        window.dismissResumePrompt = function() {
+            const prompt = document.querySelector('.resume-prompt');
+            if (prompt) {
+                prompt.classList.remove('show');
+                setTimeout(() => prompt.remove(), 300);
+            }
+        };
+        
+        // Load progress when page loads
+        window.addEventListener('load', loadSavedProgress);
         
         function showToast(message) {
             const toast = document.createElement('div');
@@ -255,6 +400,32 @@
                 setTimeout(() => toast.remove(), 300);
             }, 2000);
         }
+        
+        // Mark as watched function
+        window.markAsWatched = function() {
+            const data = {
+                type: videoType === 'episode' ? 'series' : videoType,
+                id: videoId
+            };
+            
+            if (videoType === 'episode' && typeof season !== 'undefined' && typeof episode !== 'undefined') {
+                data.season = season;
+                data.episode = episode;
+            }
+            
+            fetch('/api/mark_watched', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Marked as watched ✓');
+                }
+            })
+            .catch(err => console.log('Failed to mark as watched:', err));
+        };
         
         // Handle keyboard shortcuts
         document.addEventListener('keydown', function(e) {
@@ -348,7 +519,46 @@
             
             // Save initial view
             setTimeout(() => saveProgress(), 5000);
+            
+            // Auto-hide loading after 10 seconds if iframe loaded
+            setTimeout(() => {
+                hideLoading();
+            }, 10000);
         });
+        
+        // Functions for handling video loading states
+        function hideLoading() {
+            const loader = document.getElementById('loadingIndicator');
+            if (loader) {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.style.display = 'none', 300);
+            }
+        }
+        
+        function showError() {
+            const loader = document.getElementById('loadingIndicator');
+            const error = document.getElementById('errorMessage');
+            if (loader) loader.style.display = 'none';
+            if (error) error.style.display = 'flex';
+        }
+        
+        function hideError() {
+            const error = document.getElementById('errorMessage');
+            if (error) error.style.display = 'none';
+        }
+        
+        function showLoading(sourceNum) {
+            const loader = document.getElementById('loadingIndicator');
+            const loadingSource = document.getElementById('loadingSource');
+            hideError();
+            if (loader) {
+                loader.style.display = 'flex';
+                loader.style.opacity = '1';
+            }
+            if (loadingSource) {
+                loadingSource.textContent = `Trying source ${sourceNum}...`;
+            }
+        }
         
         // Save progress before leaving
         window.addEventListener('beforeunload', saveProgress);
@@ -371,8 +581,12 @@
             document.querySelectorAll('.source-option').forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
             
+            // Get source number
+            const sourceNum = button.textContent.match(/\d+/)[0];
+            showLoading(sourceNum);
+            
             // Switch iframe source
-            const iframe = document.querySelector('iframe');
+            const iframe = document.getElementById('videoIframe');
             iframe.src = sourceUrl;
             
             // Show notification
@@ -380,6 +594,9 @@
             
             // Hide menu after short delay
             setTimeout(hideSourceMenu, 500);
+            
+            // Auto-hide loading after timeout
+            setTimeout(() => hideLoading(), 8000);
         }
     </script>
 </body>

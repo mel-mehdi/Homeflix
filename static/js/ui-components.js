@@ -29,9 +29,10 @@ function toggleSearch() {
         if (searchInput.value.trim()) {
             filterContent();
         } else {
-            // If no content, close search
+            // If no content, close search and clear
             searchVisible = false;
             searchContainer.classList.remove('active');
+            searchInput.value = '';
             searchInput.blur();
         }
     }
@@ -49,13 +50,12 @@ function hideSearchIfOutside(event) {
         searchContainer.classList.contains('active') &&
         !searchContainer.contains(event.target)
     ) {
-        // Only close if input is empty
-        if (!searchInput.value.trim()) {
-            searchContainer.classList.remove('active');
-            searchInput.blur();
-            searchVisible = false;
-            hideSearchSuggestions();
-        }
+        // Close search and clear input when clicking outside
+        searchContainer.classList.remove('active');
+        searchInput.blur();
+        searchInput.value = ''; // Clear the input text
+        searchVisible = false;
+        hideSearchSuggestions();
     }
     
     // Also hide suggestions if clicking outside search container
