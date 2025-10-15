@@ -264,7 +264,7 @@
                 <p class="movie-overview">{{ movie.overview if movie.overview else "No overview available." }}</p>
                 
                 <div class="movie-action-buttons">
-                    <button class="btn-play" onclick="window.location.href='/watch/movie/{{ imdb_id }}'">
+                    <button type="button" class="btn-play" onclick="window.location.href='/watch/movie/{{ imdb_id }}'">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                             <path d="M8 5v14l11-7z" fill="currentColor"/>
                         </svg>
@@ -276,7 +276,13 @@
                             {% set is_in_list = true %}
                         {% endif %}
                     {% endfor %}
-                    <button class="btn-add-list" data-added="{{ 'true' if is_in_list else 'false' }}" onclick="addToMyList('movie', '{{ imdb_id }}', {{ movie.tmdb_id }}, '{{ movie.title }}', this)">
+                    <button type="button" 
+                            class="btn-add-list" 
+                            data-added="{{ 'true' if is_in_list else 'false' }}" 
+                            data-type="movie" 
+                            data-id="{{ imdb_id }}" 
+                            data-tmdb-id="{{ movie.tmdb_id }}" 
+                            data-title="{{ movie.title | replace('"', '&quot;') | replace("'", '&#39;') }}">
                         {% if is_in_list %}
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                             <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor"/>
@@ -288,7 +294,7 @@
                         {% endif %}
                         My List
                     </button>
-                    <button class="btn-like">
+                    <button type="button" class="btn-like">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                             <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z" fill="currentColor"/>
                         </svg>
@@ -388,6 +394,8 @@
     </div>
 
     <!-- Shared navigation and My List functionality -->
+    <script src="/static/js/netflix.js"></script>
+    <script src="/static/js/ui-components.js"></script>
     <script src="/static/js/my-list.js"></script>
     <script src="/static/js/watch-mark.js"></script>
     <script>

@@ -316,7 +316,7 @@
                 <p class="series-overview">{{ series.overview }}</p>
 
                 <div class="series-action-buttons">
-                    <button class="btn-play" onclick="window.location.href='/watch/series/{{ imdb_id }}/1/1'">
+                    <button type="button" class="btn-play" onclick="window.location.href='/watch/series/{{ imdb_id }}/1/1'">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M8 5v14l11-7z" fill="currentColor"/>
                         </svg>
@@ -328,7 +328,13 @@
                             {% set is_in_list = true %}
                         {% endif %}
                     {% endfor %}
-                    <button class="btn-add-list" data-added="{{ 'true' if is_in_list else 'false' }}" onclick="addToMyList('series', '{{ imdb_id }}', {{ series.tmdb_id }}, '{{ series.title }}', this)">
+                    <button type="button" 
+                            class="btn-add-list" 
+                            data-added="{{ 'true' if is_in_list else 'false' }}" 
+                            data-type="series" 
+                            data-id="{{ imdb_id }}" 
+                            data-tmdb-id="{{ series.tmdb_id }}" 
+                            data-title="{{ series.title | replace('"', '&quot;') | replace("'", '&#39;') }}">
                         {% if is_in_list %}
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor"/>
@@ -340,7 +346,7 @@
                         {% endif %}
                         My List
                     </button>
-                    <button id="markSeriesWatchedBtn" class="btn-add-list">
+                    <button type="button" id="markSeriesWatchedBtn" class="btn-add-list">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" stroke="currentColor" stroke-width="2"/>
                         </svg>
@@ -462,6 +468,8 @@
     </div>
 
     <!-- Shared navigation and My List functionality -->
+    <script src="/static/js/netflix.js"></script>
+    <script src="/static/js/ui-components.js"></script>
     <script src="/static/js/my-list.js"></script>
     <script>
         // Mark individual season as watched/unwatched

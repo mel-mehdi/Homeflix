@@ -253,3 +253,46 @@ async function addToMyList(type, id, tmdbId, title, button) {
         console.error('Failed to update My List:', error);
     }
 }
+
+// Initialize My List buttons on detail pages
+function initializeDetailPageButtons() {
+    console.log('Initializing detail page My List buttons...');
+    const myListButtons = document.querySelectorAll('.btn-add-list[data-type]');
+    console.log('Found buttons:', myListButtons.length);
+    
+    myListButtons.forEach((button, index) => {
+        console.log(`Setting up button ${index}:`, {
+            type: button.getAttribute('data-type'),
+            id: button.getAttribute('data-id'),
+            title: button.getAttribute('data-title')
+        });
+        
+        // Remove any existing click listeners by cloning
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+        
+        // Add new click listener
+        newButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            console.log('My List button clicked!');
+            
+            const type = this.getAttribute('data-type');
+            const id = this.getAttribute('data-id');
+            const tmdbId = this.getAttribute('data-tmdb-id');
+            const title = this.getAttribute('data-title');
+            
+            console.log('Adding to list:', { type, id, tmdbId, title });
+            
+            addToMyList(type, id, tmdbId, title, this);
+        });
+    });
+}
+
+// Auto-initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeDetailPageButtons);
+} else {
+    initializeDetailPageButtons();
+}

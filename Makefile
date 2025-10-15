@@ -1,11 +1,17 @@
-run:
-	python3 media_server.py
+# run:
+# 	python3 media_server.py
 
-install:
-	pip3 install -r requirements.txt
+# install:
+# 	pip3 install -r requirements.txt
 
-update:
-	python3 sync_data.py
+# update:
+# 	python3 sync_data.py
+
+sync-now:
+	docker-compose exec sync-scheduler python sync_data.py
+
+sync-logs:
+	docker-compose logs -f sync-scheduler
 
 # Docker commands
 re: down build up
