@@ -718,6 +718,199 @@ class DatabaseService:
             logger.error(f"Error unmarking as watched: {e}")
             return False
     
+    def mark_season_as_watched(self, media_id: str, tmdb_id: Optional[int], 
+                              series_title: str, season_number: int, 
+                              episode_count: int) -> bool:
+        """
+        Mark all episodes in a season as watched
+        
+        Args:
+            media_id: IMDB ID of the series
+            tmdb_id: TMDB ID of the series
+            series_title: Title of the series
+            season_number: Season number
+            episode_count: Total number of episodes in the season
+            
+        Returns:
+            True if successful
+        """
+        from database import WatchedItems
+        
+        try:
+            # Mark all episodes in the season
+            for episode_num in range(1, episode_count + 1):
+                # Check if already marked
+                existing = self.db.query(WatchedItems).filter(
+                    WatchedItems.media_type == 'series',
+                    WatchedItems.media_id == media_id,
+                    WatchedItems.season_number == season_number,
+                    WatchedItems.episode_number == episode_num
+                ).first()
+                
+                if not existing:
+                    watched_item = WatchedItems(
+                        media_type='series',
+                        media_id=media_id,
+                        tmdb_id=tmdb_id,
+                        title=f"{series_title} - S{season_number}E{episode_num}",
+                        season_number=season_number,
+                        episode_number=episode_num
+                    )
+                    self.db.add(watched_item)
+                else:
+                    # Update timestamp
+                    existing.marked_at = datetime.utcnow()
+            
+            self.db.commit()
+            return True
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error marking season as watched: {e}")
+            return False
+    
+    def unmark_season_as_watched(self, media_id: str, season_number: int) -> bool:
+        """
+        Remove watched marks from all episodes in a season
+        
+        Args:
+            media_id: IMDB ID of the series
+            season_number: Season number
+            
+        Returns:
+            True if successful
+        """
+        from database import WatchedItems
+        
+        try:
+            self.db.query(WatchedItems).filter(
+                WatchedItems.media_type == 'series',
+                WatchedItems.media_id == media_id,
+                WatchedItems.season_number == season_number
+            ).delete()
+            
+            self.db.commit()
+            return True
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error unmarking season as watched: {e}")
+            return False
+    
+    def mark_series_as_watched(self, media_id: str, tmdb_id: Optional[int],
+                              series_title: str, seasons_data: List[Dict[str, Any]]) -> bool:
+        """
+        Mark all episodes in all seasons as watched
+        
+        Args:
+            media_id: IMDB ID of the series
+            tmdb_id: TMDB ID of the series
+            series_title: Title of the series
+            seasons_data: List of season dictionaries with 'season_number' and 'episode_count'
+            
+        Returns:
+            True if successful
+        """
+        try:
+            for season in seasons_data:
+                season_number = season.get('season_number')
+                episode_count = season.get('episode_count', 0)
+                
+                if season_number and season_number > 0 and episode_count > 0:
+                    success = self.mark_season_as_watched(
+                        media_id=media_id,
+                        tmdb_id=tmdb_id,
+                        series_title=series_title,
+                        season_number=season_number,
+                        episode_count=episode_count
+                    )
+                    if not success:
+                        return False
+            
+            return True
+        except Exception as e:
+            logger.error(f"Error marking series as watched: {e}")
+            return False
+    
+    def unmark_series_as_watched(self, media_id: str) -> bool:
+        """
+        Remove watched marks from all episodes in a series
+        
+        Args:
+            media_id: IMDB ID of the series
+            
+        Returns:
+            True if successful
+        """
+        from database import WatchedItems
+        
+        try:
+            self.db.query(WatchedItems).filter(
+                WatchedItems.media_type == 'series',
+                WatchedItems.media_id == media_id
+            ).delete()
+            
+            self.db.commit()
+            return True
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error unmarking series as watched: {e}")
+            return False
+    
+    def get_season_watch_status(self, media_id: str, season_number: int) -> Dict[str, Any]:
+        """
+        Get watched status for all episodes in a season
+        
+        Args:
+            media_id: IMDB ID of the series
+            season_number: Season number
+            
+        Returns:
+            Dictionary with watched episode numbers and statistics
+        """
+        from database import WatchedItems
+        
+        watched_episodes = self.db.query(WatchedItems).filter(
+            WatchedItems.media_type == 'series',
+            WatchedItems.media_id == media_id,
+            WatchedItems.season_number == season_number
+        ).all()
+        
+        watched_episode_numbers = [ep.episode_number for ep in watched_episodes]
+        
+        return {
+            'watched_episodes': watched_episode_numbers,
+            'watched_count': len(watched_episode_numbers)
+        }
+    
+    def get_series_watch_status(self, media_id: str) -> Dict[str, Any]:
+        """
+        Get watched status for all episodes in a series
+        
+        Args:
+            media_id: IMDB ID of the series
+            
+        Returns:
+            Dictionary with watched episodes by season
+        """
+        from database import WatchedItems
+        
+        watched_episodes = self.db.query(WatchedItems).filter(
+            WatchedItems.media_type == 'series',
+            WatchedItems.media_id == media_id
+        ).all()
+        
+        # Group by season
+        by_season = {}
+        for ep in watched_episodes:
+            season = ep.season_number
+            if season not in by_season:
+                by_season[season] = []
+            by_season[season].append(ep.episode_number)
+        
+        return {
+            'watched_by_season': by_season,
+            'total_watched': len(watched_episodes)
+        }
+
     def is_marked_watched(self, media_type: str, media_id: str,
                          season: Optional[int] = None, 
                          episode: Optional[int] = None) -> bool:

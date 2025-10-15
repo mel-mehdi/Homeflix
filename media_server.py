@@ -675,19 +675,31 @@ def get_backdrop(media_type, tmdb_id):
                 
                 if backdrop_path:
                     # Cache the backdrop path
-                    cache_manager.set('backdrops', key, backdrop_path, cache_config.BACKDROP)
+                    cache_manager.set('backdrops', key, backdrop_path)
                 else:
                     # No backdrop available, return placeholder
+                    logger.warning(f"No backdrop available for {media_type}/{tmdb_id}")
                     svg = '''<svg width="500" height="281" xmlns="http://www.w3.org/2000/svg">
                     <rect width="500" height="281" fill="#333"/>
                     <text x="250" y="140" text-anchor="middle" fill="white" font-size="16">No Backdrop Available</text>
                     </svg>'''
                     return Response(svg, mimetype='image/svg+xml')
             else:
-                abort(404)
+                # TMDB API error, return placeholder
+                logger.warning(f"TMDB API error for {media_type}/{tmdb_id}: {response.status_code}")
+                svg = '''<svg width="500" height="281" xmlns="http://www.w3.org/2000/svg">
+                <rect width="500" height="281" fill="#333"/>
+                <text x="250" y="140" text-anchor="middle" fill="white" font-size="16">Backdrop Unavailable</text>
+                </svg>'''
+                return Response(svg, mimetype='image/svg+xml')
         except Exception as e:
             logger.error(f"Error fetching backdrop metadata from TMDB: {e}")
-            abort(404)
+            # Return placeholder instead of aborting
+            svg = '''<svg width="500" height="281" xmlns="http://www.w3.org/2000/svg">
+            <rect width="500" height="281" fill="#333"/>
+            <text x="250" y="140" text-anchor="middle" fill="white" font-size="16">Backdrop Error</text>
+            </svg>'''
+            return Response(svg, mimetype='image/svg+xml')
     
     # Now fetch the actual image
     try:
@@ -700,8 +712,13 @@ def get_backdrop(media_type, tmdb_id):
             mimetype=image_response.headers.get('content-type', 'image/jpeg')
         )
     except Exception as e:
-        logger.error(f"Error proxying backdrop: {e}")
-        abort(404)
+        logger.error(f"Error proxying backdrop image for {media_type}/{tmdb_id}: {e}")
+        # Return placeholder instead of aborting
+        svg = '''<svg width="500" height="281" xmlns="http://www.w3.org/2000/svg">
+        <rect width="500" height="281" fill="#333"/>
+        <text x="250" y="140" text-anchor="middle" fill="white" font-size="16">Image Unavailable</text>
+        </svg>'''
+        return Response(svg, mimetype='image/svg+xml')
 
 @app.route('/css/<filename>')
 def serve_css(filename):
@@ -922,6 +939,138 @@ def get_watch_progress_api(media_type, media_id):
         
     except Exception as e:
         logger.error(f"Error getting watch progress: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/mark_season_watched', methods=['POST'])
+def mark_season_as_watched_api():
+    """Mark entire season as watched"""
+    try:
+        data = request.get_json()
+        media_id = data.get('id') or data.get('imdb_id')
+        tmdb_id = data.get('tmdb_id')
+        series_title = data.get('title', 'Unknown')
+        season_number = data.get('season_number')
+        episode_count = data.get('episode_count')
+        
+        if not media_id or not season_number or not episode_count:
+            return jsonify({'error': 'Missing required fields'}), 400
+        
+        with DatabaseService() as db_service:
+            success = db_service.mark_season_as_watched(
+                media_id=media_id,
+                tmdb_id=tmdb_id,
+                series_title=series_title,
+                season_number=season_number,
+                episode_count=episode_count
+            )
+            
+            if success:
+                logger.info(f"Marked season {season_number} as watched: {series_title}")
+            
+            return jsonify({'success': success})
+        
+    except Exception as e:
+        logger.error(f"Error marking season as watched: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/unmark_season_watched', methods=['POST'])
+def unmark_season_as_watched_api():
+    """Remove watched marks from entire season"""
+    try:
+        data = request.get_json()
+        media_id = data.get('id') or data.get('imdb_id')
+        season_number = data.get('season_number')
+        
+        if not media_id or not season_number:
+            return jsonify({'error': 'Missing required fields'}), 400
+        
+        with DatabaseService() as db_service:
+            success = db_service.unmark_season_as_watched(
+                media_id=media_id,
+                season_number=season_number
+            )
+            
+            return jsonify({'success': success})
+        
+    except Exception as e:
+        logger.error(f"Error unmarking season as watched: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/mark_series_watched', methods=['POST'])
+def mark_series_as_watched_api():
+    """Mark entire series as watched"""
+    try:
+        data = request.get_json()
+        media_id = data.get('id') or data.get('imdb_id')
+        tmdb_id = data.get('tmdb_id')
+        series_title = data.get('title', 'Unknown')
+        seasons_data = data.get('seasons', [])
+        
+        if not media_id or not seasons_data:
+            return jsonify({'error': 'Missing required fields'}), 400
+        
+        with DatabaseService() as db_service:
+            success = db_service.mark_series_as_watched(
+                media_id=media_id,
+                tmdb_id=tmdb_id,
+                series_title=series_title,
+                seasons_data=seasons_data
+            )
+            
+            if success:
+                logger.info(f"Marked entire series as watched: {series_title}")
+            
+            return jsonify({'success': success})
+        
+    except Exception as e:
+        logger.error(f"Error marking series as watched: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/unmark_series_watched', methods=['POST'])
+def unmark_series_as_watched_api():
+    """Remove watched marks from entire series"""
+    try:
+        data = request.get_json()
+        media_id = data.get('id') or data.get('imdb_id')
+        
+        if not media_id:
+            return jsonify({'error': 'Missing required fields'}), 400
+        
+        with DatabaseService() as db_service:
+            success = db_service.unmark_series_as_watched(media_id=media_id)
+            
+            return jsonify({'success': success})
+        
+    except Exception as e:
+        logger.error(f"Error unmarking series as watched: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/season_watch_status/<media_id>/<int:season_number>', methods=['GET'])
+def get_season_watch_status_api(media_id, season_number):
+    """Get watched status for a season"""
+    try:
+        with DatabaseService() as db_service:
+            status = db_service.get_season_watch_status(media_id, season_number)
+            return jsonify(status)
+    except Exception as e:
+        logger.error(f"Error getting season watch status: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/series_watch_status/<media_id>', methods=['GET'])
+def get_series_watch_status_api(media_id):
+    """Get watched status for entire series"""
+    try:
+        with DatabaseService() as db_service:
+            status = db_service.get_series_watch_status(media_id)
+            return jsonify(status)
+    except Exception as e:
+        logger.error(f"Error getting series watch status: {e}")
         return jsonify({'error': str(e)}), 500
 
 
@@ -1276,12 +1425,9 @@ def search_suggestions():
         logger.error(f"Error in search_suggestions: {e}")
         return jsonify({'results': []})
 
-if __name__ == '__main__':
-    network_ip = get_network_ip()
-    print(f"🚀 Homeflix server starting...")
-    print(f"   Access locally: http://localhost:{server_config.PORT}")
-    print(f"   Access on network: http://{network_ip}:{server_config.PORT}")
-    
+
+
+if __name__ == "__main__":
     app.run(
         host=server_config.HOST,
         port=server_config.PORT,

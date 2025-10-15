@@ -6,6 +6,7 @@
     <title>{{ series.title }} - Myflix</title>
     <link rel="stylesheet" href="/css/index.css">
     <link rel="stylesheet" href="/css/modal.css">
+    <link rel="stylesheet" href="/css/watch-mark.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -156,13 +157,17 @@
             background: #2f2f2f;
             border-radius: 8px;
             overflow: hidden;
-            cursor: pointer;
             transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
         }
 
         .season-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .season-card-clickable {
+            cursor: pointer;
         }
 
         .season-poster {
@@ -189,6 +194,13 @@
             font-size: 1.2rem;
             color: white;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .season-watch-mark {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
         }
 
         .season-info {
@@ -328,6 +340,12 @@
                         {% endif %}
                         My List
                     </button>
+                    <button id="markSeriesWatchedBtn" class="btn-add-list">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        <span id="seriesWatchText">Mark Series Watched</span>
+                    </button>
                     <button class="btn-like">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z" fill="currentColor"/>
@@ -393,16 +411,31 @@
             <h2 class="section-title">Seasons</h2>
             <div class="seasons-grid">
                 {% for season in series.seasons %}
-                <div class="season-card" onclick="window.location.href='/series/{{ imdb_id }}/season/{{ season.season_number }}'">
-                    <div class="season-poster" {% if season.poster_path %}style="background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://image.tmdb.org/t/p/w500{{ season.poster_path }}');"{% endif %}>
-                        <div class="season-number-large">{{ season.season_number }}</div>
-                        <div class="season-label">Season</div>
-                    </div>
-                    <div class="season-info">
-                        <div class="season-name">{{ season.name }}</div>
-                        <div class="season-meta">
-                            {{ season.episode_count }} Episode{% if season.episode_count != 1 %}s{% endif %}
-                            {% if season.air_date %} • {{ season.air_date[:4] }}{% endif %}
+                <div class="season-card">
+                    <div class="season-card-clickable" onclick="window.location.href='/series/{{ imdb_id }}/season/{{ season.season_number }}'">
+                        <div class="season-poster" {% if season.poster_path %}style="background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://image.tmdb.org/t/p/w500{{ season.poster_path }}');"{% endif %}>
+                            {% if season.season_number > 0 %}
+                            <div class="season-watch-mark">
+                                <button class="watch-mark-btn-small" 
+                                        data-season="{{ season.season_number }}" 
+                                        data-episode-count="{{ season.episode_count }}"
+                                        title="Mark Season as Watched"
+                                        onclick="event.stopPropagation(); toggleSeasonWatched('{{ imdb_id }}', {{ series.tmdb_id }}, '{{ series.title|replace("'", "\\'") }}', {{ season.season_number }}, {{ season.episode_count }}, this)">
+                                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            {% endif %}
+                            <div class="season-number-large">{{ season.season_number }}</div>
+                            <div class="season-label">Season</div>
+                        </div>
+                        <div class="season-info">
+                            <div class="season-name">{{ season.name }}</div>
+                            <div class="season-meta">
+                                {{ season.episode_count }} Episode{% if season.episode_count != 1 %}s{% endif %}
+                                {% if season.air_date %} • {{ season.air_date[:4] }}{% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -431,6 +464,143 @@
     <!-- Shared navigation and My List functionality -->
     <script src="/static/js/my-list.js"></script>
     <script>
+        // Mark individual season as watched/unwatched
+        async function toggleSeasonWatched(imdbId, tmdbId, seriesTitle, seasonNumber, episodeCount, button) {
+            const isMarked = button.classList.contains('watched');
+            
+            try {
+                button.disabled = true;
+                
+                const endpoint = isMarked ? '/api/unmark_season_watched' : '/api/mark_season_watched';
+                const body = isMarked ? 
+                    { id: imdbId, season_number: seasonNumber } :
+                    { id: imdbId, tmdb_id: tmdbId, title: seriesTitle, season_number: seasonNumber, episode_count: episodeCount };
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Toggle the watched class
+                    button.classList.toggle('watched');
+                    
+                    // Update title
+                    button.title = button.classList.contains('watched') ? 'Unmark Season as Watched' : 'Mark Season as Watched';
+                } else {
+                    alert('Failed to update season status');
+                }
+            } catch (error) {
+                console.error('Error toggling season watched status:', error);
+                alert('Error updating season status');
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        // Mark entire series as watched/unwatched
+        async function toggleSeriesWatched() {
+            const button = document.getElementById('markSeriesWatchedBtn');
+            const text = document.getElementById('seriesWatchText');
+            const imdbId = '{{ imdb_id }}';
+            const tmdbId = {{ series.tmdb_id }};
+            const seriesTitle = '{{ series.title|replace("'", "\\'") }}';
+            
+            // Collect all seasons data
+            const seasons = [
+                {% for season in series.seasons %}
+                {% if season.season_number > 0 %}
+                { season_number: {{ season.season_number }}, episode_count: {{ season.episode_count }} },
+                {% endif %}
+                {% endfor %}
+            ];
+            
+            // Check current state
+            const isMarked = text.textContent.includes('Unmark');
+            
+            try {
+                button.disabled = true;
+                text.textContent = 'Processing...';
+                
+                const endpoint = isMarked ? '/api/unmark_series_watched' : '/api/mark_series_watched';
+                const body = isMarked ? 
+                    { id: imdbId } :
+                    { id: imdbId, tmdb_id: tmdbId, title: seriesTitle, seasons: seasons };
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update button text and style
+                    text.textContent = isMarked ? 'Mark Series Watched' : 'Unmark Series Watched';
+                    button.style.background = isMarked ? 'rgba(42, 42, 42, 0.6)' : 'rgba(70, 211, 105, 0.3)';
+                    button.style.borderColor = isMarked ? 'rgba(255,255,255,0.5)' : 'rgba(70, 211, 105, 0.8)';
+                    
+                    // Show success message
+                    alert(isMarked ? 'Series unmarked as watched!' : 'Entire series marked as watched!');
+                } else {
+                    alert('Failed to update series status');
+                }
+            } catch (error) {
+                console.error('Error toggling series watched status:', error);
+                alert('Error updating series status');
+            } finally {
+                button.disabled = false;
+                if (text.textContent === 'Processing...') {
+                    text.textContent = 'Mark Series Watched';
+                }
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const markSeriesBtn = document.getElementById('markSeriesWatchedBtn');
+            if (markSeriesBtn) {
+                markSeriesBtn.addEventListener('click', toggleSeriesWatched);
+                
+                // Check if series is fully watched on load
+                fetch('/api/series_watch_status/{{ imdb_id }}')
+                    .then(response => response.json())
+                    .then(data => {
+                        // Calculate total episodes
+                        const totalEpisodes = [
+                            {% for season in series.seasons %}
+                            {% if season.season_number > 0 %}
+                            {{ season.episode_count }},
+                            {% endif %}
+                            {% endfor %}
+                        ].reduce((a, b) => a + b, 0);
+                        
+                        if (data.total_watched === totalEpisodes && totalEpisodes > 0) {
+                            document.getElementById('seriesWatchText').textContent = 'Unmark Series Watched';
+                            markSeriesBtn.style.background = 'rgba(70, 211, 105, 0.3)';
+                            markSeriesBtn.style.borderColor = 'rgba(70, 211, 105, 0.8)';
+                        }
+                        
+                        // Update individual season buttons
+                        const watchedByseason = data.watched_by_season || {};
+                        {% for season in series.seasons %}
+                        {% if season.season_number > 0 %}
+                        const season{{ season.season_number }}Watched = watchedByseason[{{ season.season_number }}] || [];
+                        const season{{ season.season_number }}Btn = document.querySelector('[data-season="{{ season.season_number }}"]');
+                        if (season{{ season.season_number }}Btn && season{{ season.season_number }}Watched.length === {{ season.episode_count }}) {
+                            season{{ season.season_number }}Btn.classList.add('watched');
+                            season{{ season.season_number }}Btn.title = 'Unmark Season as Watched';
+                        }
+                        {% endif %}
+                        {% endfor %}
+                    })
+                    .catch(error => console.error('Error checking series status:', error));
+            }
+        });
+        
         // Navbar scroll effect
         window.addEventListener('scroll', function() {
             const navbar = document.getElementById('navbar');
