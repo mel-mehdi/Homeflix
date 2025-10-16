@@ -129,7 +129,7 @@ function updateHeroContent(index) {
         // Update hidden data attributes for buttons
         const heroCard = heroBanner.querySelector('[data-hero="true"]');
         if (heroCard) {
-            heroCard.dataset.type = 'series';
+            heroCard.dataset.type = series.type || 'movie';
             heroCard.dataset.id = series.imdb_id;
             heroCard.dataset.tmdbId = series.tmdb_id;
         }
@@ -144,7 +144,8 @@ function updateHeroContent(index) {
         const badgeTop10 = heroBanner.querySelector('.badge-top10');
         if (badgeTop10) {
             const position = (index + 1);
-            badgeTop10.textContent = `#${position} in TV Shows Today`;
+            const mediaType = (series.type === 'movie') ? 'Movies' : 'TV Shows';
+            badgeTop10.textContent = `#${position} in ${mediaType} Today`;
         }
         
         // Update match score and metadata
@@ -167,8 +168,14 @@ function updateHeroContent(index) {
         
         const heroSeasons = heroBanner.querySelector('.hero-seasons');
         if (heroSeasons) {
-            const seasons = series.number_of_seasons || '3';
-            heroSeasons.textContent = `${seasons} Season${seasons !== 1 ? 's' : ''}`;
+            if (series.type === 'movie') {
+                // For movies, show duration instead of seasons
+                heroSeasons.textContent = series.duration || '2h';
+            } else {
+                // For series, show seasons
+                const seasons = series.number_of_seasons || '3';
+                heroSeasons.textContent = `${seasons} Season${seasons !== 1 ? 's' : ''}`;
+            }
         }
         
         // Update overview
@@ -514,6 +521,8 @@ function initializeHeroWatchButton() {
             const id = heroCard.dataset.id;
             if (type === 'series') {
                 window.location.href = `/series/${id}`;
+            } else if (type === 'movie') {
+                window.location.href = `/movie/${id}`;
             } else {
                 window.location.href = `/watch/${type}/${id}`;
             }

@@ -30,8 +30,8 @@
                 <button class="retry-button" onclick="showSourceMenu()">Try Different Source</button>
             </div>
             
-            <iframe id="videoIframe"
-                    src="{{ embed_url }}" 
+        <iframe id="videoIframe"
+            src="about:blank" 
                     width="100%" 
                     height="100%" 
                     frameborder="0" 
@@ -178,14 +178,26 @@
         let countdownInterval = null;
         
         const videoType = "{{ type }}";
-        const videoId = "{{ embed_url }}".match(/(?:tmdb=|\/)(tt\d+|\d+)/)?.[1] || '';
+        // Parse the tmdb/imdb id from the original embed_url if present
+        const videoId = ("{{ embed_url }}" || "").match(/(?:tmdb=|\/)(tt\d+|\d+)/)?.[1] || '';
         const videoTitle = "{{ title }}";
         const imdbId = "{{ imdb_id }}";
+        const tmdbId = "{{ tmdb_id }}";
+        const season = {% if season is defined %}{{ season }}{% else %}null{% endif %};
+        const episode = {% if episode is defined %}{{ episode }}{% else %}null{% endif %};
         const currentSeason = {% if season %}{{ season }}{% else %}null{% endif %};
         const currentEpisode = {% if episode %}{{ episode }}{% else %}null{% endif %};
         const seriesTitle = "{{ series_title if series_title else title }}";
         let currentSourceIndex = 0;
         let nextEpisodeData = null;
+        // List of embed sources rendered from server
+        const embedSources = [
+            {% if embed_sources %}
+                {% for s in embed_sources %}
+                    "{{ s }}"{{ "," if not loop.last }}
+                {% endfor %}
+            {% endif %}
+        ];
         
         // Show/hide controls on mouse movement
         document.addEventListener('mousemove', showControls);
@@ -520,11 +532,51 @@
             // Save initial view
             setTimeout(() => saveProgress(), 5000);
             
-            // Auto-hide loading after 10 seconds if iframe loaded
+            // Probe embed sources and set the iframe to the first one that allows framing
+            selectWorkingSource(embedSources).then(chosen => {
+                if (chosen) {
+                    const iframe = document.getElementById('videoIframe');
+                    iframe.src = chosen;
+                } else {
+                    // No working source found — show error message
+                    showError();
+                }
+            }).catch(err => {
+                console.error('Error selecting embed source', err);
+                showError();
+            });
+
+            // Auto-hide loading after 10 seconds if iframe hasn't signaled load
             setTimeout(() => {
                 hideLoading();
             }, 10000);
         });
+
+        // Try each source sequentially by asking the server whether the URL allows framing.
+        // Returns a promise that resolves to the first URL that allows framing or null.
+        async function selectWorkingSource(sources) {
+            if (!sources || !sources.length) return null;
+            for (let i = 0; i < sources.length; i++) {
+                const src = sources[i];
+                try {
+                    showLoading(i + 1);
+                    const resp = await fetch('/embed_check', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url: src })
+                    });
+                    const json = await resp.json();
+                    if (json.allows) {
+                        currentSourceIndex = i;
+                        hideSourceMenu();
+                        return src;
+                    }
+                } catch (e) {
+                    console.warn('Embed check failed for', src, e);
+                }
+            }
+            return null;
+        }
         
         // Functions for handling video loading states
         function hideLoading() {

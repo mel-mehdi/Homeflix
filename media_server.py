@@ -8,6 +8,7 @@ from config import api_config, cache_config, server_config, pagination_config, g
 from utils import cache_manager, make_api_request, measure_time
 from functools import lru_cache
 from typing import List, Dict, Any, Optional
+from urllib.parse import urlparse
 
 # Configure logging
 logging.basicConfig(
@@ -79,34 +80,91 @@ def _populate_image_cache(items: List[Dict[str, Any]], media_type: str):
     """
     if not items:
         return
-    
+
     with DatabaseService() as db_service:
         for item in items:
             tmdb_id = item.get('tmdb_id')
             if not tmdb_id:
                 continue
-            
+
             # For mixed types (My List), determine type from item
             current_type = media_type
             if media_type == 'mixed':
                 current_type = 'movie' if item.get('type') == 'movie' else 'tv'
-            
+
             # Get the database object to access poster_path and backdrop_path
             try:
                 if current_type == 'movie':
                     db_item = db_service.get_movie_by_tmdb_id(tmdb_id)
                 else:
                     db_item = db_service.get_tvshow_by_tmdb_id(tmdb_id)
-                
-                if db_item:
-                    # Populate caches
-                    if db_item.poster_path:
-                        cache_manager.set('posters', f"{current_type}_{tmdb_id}", db_item.poster_path)
-                    
-                    if db_item.backdrop_path:
-                        cache_manager.set('backdrops', f"{current_type}_{tmdb_id}", db_item.backdrop_path)
+
+                if not db_item:
+                    continue
+
+                # Populate caches
+                if getattr(db_item, 'poster_path', None):
+                    cache_manager.set('posters', f"{current_type}_{tmdb_id}", db_item.poster_path)
+
+                if getattr(db_item, 'backdrop_path', None):
+                    cache_manager.set('backdrops', f"{current_type}_{tmdb_id}", db_item.backdrop_path)
             except Exception as e:
                 logger.error(f"Error populating cache for {current_type} {tmdb_id}: {e}")
+
+
+def _allows_framing(headers: Dict[str, str]) -> bool:
+    """Return True if the response headers indicate the resource can be framed.
+
+    Checks X-Frame-Options and Content-Security-Policy frame-ancestors.
+    """
+    xfo = headers.get('x-frame-options') or headers.get('X-Frame-Options')
+    if xfo:
+        xfo_val = xfo.lower()
+        if 'deny' in xfo_val or 'sameorigin' in xfo_val:
+            return False
+    csp = headers.get('content-security-policy') or headers.get('Content-Security-Policy')
+    if csp and 'frame-ancestors' in csp:
+        try:
+            # Parse frame-ancestors directive
+            parts = [p.strip() for p in csp.split(';')]
+            fa = [p for p in parts if p.startswith('frame-ancestors')]
+            if fa:
+                fa_vals = fa[0].split()[1:]
+                # If frame-ancestors contains * or 'self', allow; otherwise block
+                if any(v == '*' or "'self'" in v or 'self' in v for v in fa_vals):
+                    return True
+                return False
+        except Exception:
+            # If parsing fails, be conservative and disallow
+            return False
+    return True
+
+
+@app.route('/embed_check', methods=['POST'])
+def embed_check():
+    """Simple endpoint to test whether an embed url allows framing.
+
+    Expects JSON: { "url": "https://..." }
+    Returns JSON: { "url": "...", "allows": true/false, "status_code": int }
+    """
+    try:
+        data = request.get_json(force=True)
+        url = data.get('url')
+        if not url:
+            return jsonify({'error': 'missing url'}), 400
+
+        # Use HEAD first to be lighter; follow redirects but capture final headers
+        try:
+            resp = requests.head(url, allow_redirects=True, timeout=5)
+        except Exception:
+            # Fallback to GET if HEAD fails (some hosts don't support HEAD)
+            resp = requests.get(url, allow_redirects=True, timeout=5)
+
+        allows = _allows_framing({k.lower(): v for k, v in resp.headers.items()})
+        return jsonify({'url': url, 'allows': allows, 'status_code': resp.status_code})
+    except Exception as e:
+        logger.error(f"Error in embed_check: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/favicon.ico')
 def favicon():
