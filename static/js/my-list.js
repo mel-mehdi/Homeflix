@@ -220,8 +220,29 @@ function removeFromMyListModal(type, id, title) {
     });
 }
 
-// Add to My List functionality for detail pages
-async function addToMyList(type, id, tmdbId, title, button) {
+// Add to My List functionality - handles both title cards and detail pages
+async function addToMyList(...args) {
+    let type, id, tmdbId, title, button;
+    
+    if (args.length === 2) {
+        // Called from title card: addToMyList(title, button)
+        [title, button] = args;
+        const card = button.closest('.title-card');
+        if (!card) {
+            console.error('Could not find title card element');
+            return;
+        }
+        type = card.dataset.type;
+        id = card.dataset.id;
+        tmdbId = card.dataset.tmdbId;
+    } else if (args.length === 5) {
+        // Called from details page: addToMyList(type, id, tmdbId, title, button)
+        [type, id, tmdbId, title, button] = args;
+    } else {
+        console.error('Invalid arguments for addToMyList');
+        return;
+    }
+    
     try {
         const isAdded = button.getAttribute('data-added') === 'true';
         const action = isAdded ? 'remove' : 'add';
@@ -242,11 +263,15 @@ async function addToMyList(type, id, tmdbId, title, button) {
 
         if (response.ok) {
             if (action === 'add') {
-                button.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor"/></svg> My List';
+                // Added to list - show checkmark icon
+                button.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor"/></svg>';
                 button.setAttribute('data-added', 'true');
+                button.title = 'Remove from My List';
             } else {
-                button.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor"/></svg> My List';
+                // Removed from list - show plus icon
+                button.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor"/></svg>';
                 button.setAttribute('data-added', 'false');
+                button.title = 'Add to My List';
             }
         }
     } catch (error) {
