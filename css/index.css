@@ -95,11 +95,11 @@ a,
     margin-right: 20px;
     font-size: 14px;
     font-weight: 400;
-    transition: color 0.4s;
+    transition: color 0.2s;
 }
 
 .nav-link:hover {
-    color: #b3b3b3;
+    color: #ffffff;
 }
 
 .navbar-right {
@@ -115,15 +115,15 @@ a,
     background: transparent;
     border: 1px solid transparent;
     border-radius: 2px;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
     width: 34px;
     height: 34px;
 }
 
 .search-container.active {
-    background: rgba(0, 0, 0, 0.75);
-    border: 1px solid rgba(255, 255, 255, 0.85);
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(10px);
     width: 280px;
     overflow: visible; /* Allow dropdown to be visible */
@@ -138,7 +138,7 @@ a,
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     width: 34px;
     height: 34px;
     flex-shrink: 0;
@@ -148,7 +148,7 @@ a,
 
 .search-toggle:hover {
     color: #b3b3b3;
-    transform: scale(1.1);
+    transform: scale(1.15);
 }
 
 .search-toggle svg {
@@ -165,7 +165,7 @@ a,
     font-weight: 400;
     width: 0;
     opacity: 0;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     outline: none;
     -webkit-appearance: none;
     -moz-appearance: none;
@@ -285,7 +285,7 @@ a,
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
     /* Hidden by default */
@@ -298,7 +298,7 @@ a,
 .hero-banner:hover .hero-nav-arrow {
     opacity: 1;
     pointer-events: auto;
-    animation: arrowPulse 1s ease-in-out infinite;
+    animation: arrowPulse 1.5s ease-in-out infinite;
 }
 
 /* Keep inactive arrows less visible even on hover */
@@ -309,15 +309,15 @@ a,
 }
 
 .hero-nav-arrow:hover:not(.inactive) {
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.95);
     border-color: #ffffff;
     color: #000000;
-    transform: translateY(-50%) scale(1.1);
+    transform: translateY(-50%) scale(1.15);
     animation: none;
 }
 
 .hero-nav-arrow:active:not(.inactive) {
-    transform: translateY(-50%) scale(0.95);
+    transform: translateY(-50%) scale(0.98);
 }
 
 .hero-nav-prev {
@@ -434,7 +434,7 @@ a,
     cursor: pointer;
     text-decoration: none;
     border: none;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     transform: translateZ(0);
     will-change: transform, background-color;
 }
@@ -445,7 +445,7 @@ a,
     height: 1.5vw;
     min-width: 16px;
     min-height: 16px;
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-primary {
@@ -455,15 +455,15 @@ a,
 
 .btn-primary:hover {
     background-color: rgba(255,255,255,0.75);
-    transform: scale(1.05) translateZ(0);
+    transform: scale(1.08) translateZ(0);
 }
 
 .btn-primary:hover svg {
-    transform: scale(1.1);
+    transform: scale(1.15);
 }
 
 .btn-primary:active {
-    transform: scale(0.95) translateZ(0);
+    transform: scale(0.98) translateZ(0);
 }
 
 .btn-secondary {
@@ -473,11 +473,11 @@ a,
 
 .btn-secondary:hover {
     background-color: rgba(109,109,110,0.4);
-    transform: scale(1.05) translateZ(0);
+    transform: scale(1.08) translateZ(0);
 }
 
 .btn-secondary:active {
-    transform: scale(0.95) translateZ(0);
+    transform: scale(0.98) translateZ(0);
 }
 
 .hero-fade-bottom {
@@ -561,22 +561,22 @@ a,
     font-weight: 600;
     border-radius: 4px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     display: inline-flex;
     align-items: center;
     gap: 8px;
 }
 
 .hero-show-more-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.25);
     border-color: #fff;
-    transform: scale(1.05);
+    transform: scale(1.08);
 }
 
 .hero-show-more-btn svg {
     width: 16px;
     height: 16px;
-    transition: transform 0.3s ease;
+    transition: transform 0.2s ease;
 }
 
 .hero-synopsis-full.expanded .hero-show-more-btn svg {
@@ -652,19 +652,19 @@ a,
     position: relative;
     width: 100%;
     border-radius: 4px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.1s ease-out, 
+                box-shadow 0.1s ease-out;
     cursor: pointer;
     background-color: #2f2f2f;
-    transform: translateZ(0);
+    transform: translateZ(0) scale(1);
     will-change: transform;
     backface-visibility: hidden;
 }
 
 .title-card:hover {
-    transform: scale(1.05) translateZ(0);
+    transform: translateZ(0) scale(1.08);
     z-index: 10;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
 }
 
 .title-card-image {
@@ -701,12 +701,13 @@ a,
     bottom: 0;
     left: 0;
     right: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
+    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 50%, transparent 100%);
     padding: 20px 16px 8px;
     border-radius: 0 0 4px 4px;
     opacity: 0;
     transform: translateY(10px);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.1s ease-out,
+                transform 0.1s ease-out;
 }
 
 .title-card:hover .title-card-metadata {
@@ -735,7 +736,7 @@ a,
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     transform: translateZ(0);
     will-change: transform, background-color, border-color;
 }
@@ -748,25 +749,25 @@ a,
 
 .title-card-play-button:hover {
     background-color: rgba(255,255,255,0.75);
-    transform: scale(1.15) translateZ(0);
+    transform: scale(1.2) translateZ(0);
 }
 
 .title-card-play-button:active {
-    transform: scale(0.9) translateZ(0);
+    transform: scale(0.95) translateZ(0);
 }
 
 .title-card-add-button:hover,
 .title-card-like-button:hover,
 .title-card-expand-button:hover {
     border-color: #ffffff;
-    background-color: rgba(42,42,42,0.8);
-    transform: scale(1.15) translateZ(0);
+    background-color: rgba(42,42,42,0.9);
+    transform: scale(1.2) translateZ(0);
 }
 
 .title-card-add-button:active,
 .title-card-like-button:active,
 .title-card-expand-button:active {
-    transform: scale(0.9) translateZ(0);
+    transform: scale(0.95) translateZ(0);
 }
 
 .title-card-play-button svg,
@@ -816,18 +817,18 @@ a,
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     transform: translateZ(0);
     will-change: transform, background-color;
 }
 
 .load-more-button:hover {
     background-color: #555555;
-    transform: scale(1.05) translateZ(0);
+    transform: scale(1.08) translateZ(0);
 }
 
 .load-more-button:active {
-    transform: scale(0.95) translateZ(0);
+    transform: scale(0.98) translateZ(0);
 }
 
 .load-more-button:disabled {
@@ -1048,7 +1049,7 @@ a,
     align-items: center;
     padding: 12px 16px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.15s;
     gap: 12px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -1058,7 +1059,7 @@ a,
 }
 
 .suggestion-item:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.15);
 }
 
 .suggestion-item.loading,
@@ -1171,25 +1172,18 @@ a,
     animation: pulse 1.5s ease-in-out infinite;
 }
 
-.title-card {
-    animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) backwards;
-}
+/* Stagger animation for title cards - only on initial load */
+.title-card:nth-child(1) { animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0s backwards; }
+.title-card:nth-child(2) { animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.05s backwards; }
+.title-card:nth-child(3) { animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.1s backwards; }
+.title-card:nth-child(4) { animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.15s backwards; }
+.title-card:nth-child(5) { animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.2s backwards; }
+.title-card:nth-child(6) { animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.25s backwards; }
+.title-card:nth-child(n+7) { animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.3s backwards; }
 
-/* Stagger animation for title cards */
-.title-card:nth-child(1) { animation-delay: 0.05s; }
-.title-card:nth-child(2) { animation-delay: 0.1s; }
-.title-card:nth-child(3) { animation-delay: 0.15s; }
-.title-card:nth-child(4) { animation-delay: 0.2s; }
-.title-card:nth-child(5) { animation-delay: 0.25s; }
-.title-card:nth-child(6) { animation-delay: 0.3s; }
-
-/* Netflix-style hover delays */
-.title-card {
-    transition: transform 0.3s ease;
-}
-
-.title-card:hover {
-    transition-delay: 0.5s;
+/* Remove animation after initial load to prevent hover delays */
+.title-card.loaded {
+    animation: none !important;
 }
 
 /* Loading spinner animation */

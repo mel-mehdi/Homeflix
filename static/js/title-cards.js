@@ -61,22 +61,11 @@ function setupTitleCardInteractions() {
         }
     });
 
-    // Hover effects using event delegation
-    document.body.addEventListener('mouseenter', function(e) {
-        const card = e.target.closest('.title-card');
-        if (card) {
-            card.style.transform = 'scale(1.05)';
-            card.style.zIndex = '10';
-        }
-    }, true);
-
-    document.body.addEventListener('mouseleave', function(e) {
-        const card = e.target.closest('.title-card');
-        if (card) {
-            card.style.transform = 'scale(1)';
-            card.style.zIndex = '1';
-        }
-    }, true);
+    // Mark cards as loaded immediately to prevent any animation interference
+    requestAnimationFrame(() => {
+        const cards = document.querySelectorAll('.title-card');
+        cards.forEach(card => card.classList.add('loaded'));
+    });
 }
 
 // Button functionality functions

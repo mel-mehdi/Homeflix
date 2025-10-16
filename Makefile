@@ -17,7 +17,7 @@ sync-logs:
 	docker-compose logs -f sync-scheduler
 
 # Docker commands
-re: build up
+re: down build up
 
 up:
 	docker-compose up -d
