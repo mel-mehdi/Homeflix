@@ -708,6 +708,21 @@ def get_poster(media_type, tmdb_id):
     key = f"{media_type}_{tmdb_id}"
     poster_path = cache_manager.get('posters', key, cache_config.POSTER)
     
+    # If not in cache, try to get from database
+    if not poster_path:
+        try:
+            with DatabaseService() as db_service:
+                if media_type == 'movie':
+                    db_item = db_service.get_movie_by_tmdb_id(tmdb_id)
+                else:
+                    db_item = db_service.get_tvshow_by_tmdb_id(tmdb_id)
+                
+                if db_item and hasattr(db_item, 'poster_path') and db_item.poster_path:
+                    poster_path = db_item.poster_path
+                    cache_manager.set('posters', key, poster_path)
+        except Exception as e:
+            logger.error(f"Error fetching poster from database: {e}")
+    
     if not poster_path:
         abort(404)
     
@@ -780,7 +795,22 @@ def get_backdrop(media_type, tmdb_id):
     key = f"{media_type}_{tmdb_id}"
     backdrop_path = cache_manager.get('backdrops', key, cache_config.BACKDROP)
     
-    # If not in cache, try to fetch from TMDB API
+    # If not in cache, try to get from database first
+    if not backdrop_path:
+        try:
+            with DatabaseService() as db_service:
+                if media_type == 'movie':
+                    db_item = db_service.get_movie_by_tmdb_id(tmdb_id)
+                else:
+                    db_item = db_service.get_tvshow_by_tmdb_id(tmdb_id)
+                
+                if db_item and hasattr(db_item, 'backdrop_path') and db_item.backdrop_path:
+                    backdrop_path = db_item.backdrop_path
+                    cache_manager.set('backdrops', key, backdrop_path)
+        except Exception as e:
+            logger.error(f"Error fetching backdrop from database: {e}")
+    
+    # If still not found, try to fetch from TMDB API
     if not backdrop_path:
         try:
             headers = {
