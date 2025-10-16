@@ -92,7 +92,7 @@ def get_embed_sources(media_type: str, identifier: str, season: Optional[int] = 
     """
     if media_type == 'movie':
         return [
-            f"https://vidfast.pro/movie/{identifier}?autoPlay=true",
+            f"https://vidfast.pro/movie/{identifier}?autoPlay=true&sub=ar",
             f"https://vidsrc.me/embed/movie?tmdb={identifier}",
             f"https://vidsrc.pm/embed/movie/{identifier}",
             f"https://vidsrc.to/embed/movie/{identifier}",
@@ -104,7 +104,7 @@ def get_embed_sources(media_type: str, identifier: str, season: Optional[int] = 
         ]
     elif media_type == 'tv':
         return [
-            f"https://vidfast.pro/tv/{identifier}",
+            f"https://vidfast.pro/tv/{identifier}?sub=ar",
             f"https://vidsrc.me/embed/tv?tmdb={identifier}",
             f"https://vidsrc.xyz/embed/tv?tmdb={identifier}",
             f"https://vidsrc.pro/embed/tv/{identifier}",
@@ -113,7 +113,7 @@ def get_embed_sources(media_type: str, identifier: str, season: Optional[int] = 
         ]
     elif media_type == 'episode' and season is not None and episode is not None:
         return [
-            f"https://vidfast.pro/tv/{identifier}/{season}/{episode}?autoPlay=true&nextButton=true&autoNext=true",
+            f"https://vidfast.pro/tv/{identifier}/{season}/{episode}?autoPlay=true&nextButton=true&autoNext=true&sub=ar",
             f"https://vidsrc.me/embed/tv?tmdb={identifier}&season={season}&episode={episode}",
             f"https://vidsrc.pm/embed/tv/{identifier}/{season}/{episode}",
             f"https://vidsrc.to/embed/tv/{identifier}/{season}/{episode}",
