@@ -659,6 +659,23 @@ a,
     transform: translateZ(0) scale(1);
     will-change: transform;
     backface-visibility: hidden;
+    overflow: hidden;
+}
+
+.title-card.loaded {
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
+    transition: transform 0.1s ease-out, 
+                box-shadow 0.1s ease-out,
+                backdrop-filter 0.1s ease-out;
+}
+
+.title-card.loaded:hover {
+    transform: translateZ(0) scale(1.08);
+    z-index: 10;
+    box-shadow: 0 12px 32px rgba(248, 0, 0, 0.7);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
 }
 
 .title-card:hover {
@@ -1137,9 +1154,10 @@ a,
 }
 
 /* Additional Netflix-style enhancements */
-.title-card-metadata {
-    box-shadow: 0 3px 10px rgba(0,0,0,0.75);
-}
+
+/* .title-card-metadata {
+    box-shadow: 0 3px 10px rgba(255, 0, 0, 0.75);
+} */
 
 /* Focus states for accessibility */
 .btn:focus,

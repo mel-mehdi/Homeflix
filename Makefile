@@ -1,11 +1,11 @@
-# run:
-# 	python3 media_server.py
+run:
+	python3 media_server.py
 
-# install:
-# 	pip3 install -r requirements.txt
+install:
+	pip3 install -r requirements.txt
 
-# update:
-# 	python3 sync_data.py
+update:
+	python3 sync_data.py
 
 build:
 	docker-compose build
