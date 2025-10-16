@@ -39,7 +39,9 @@ class Movie(Base):
     
     def to_dict(self):
         return {
+            'type': 'movie',  # Add type field
             'imdb_id': self.imdb_id,
+            'id': self.imdb_id,  # Add id alias for consistency
             'tmdb_id': self.tmdb_id,
             'title': self.title,
             'overview': self.overview,
@@ -86,7 +88,9 @@ class TVShow(Base):
     
     def to_dict(self):
         return {
+            'type': 'series',  # Add type field
             'imdb_id': self.imdb_id,
+            'id': self.imdb_id,  # Add id alias for consistency
             'tmdb_id': self.tmdb_id,
             'title': self.title,
             'overview': self.overview,

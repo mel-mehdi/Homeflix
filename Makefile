@@ -7,6 +7,9 @@
 # update:
 # 	python3 sync_data.py
 
+build:
+	docker-compose build
+
 sync-now:
 	docker-compose exec sync-scheduler python sync_data.py
 
@@ -15,9 +18,6 @@ sync-logs:
 
 # Docker commands
 re: down build up
-
-build:
-	docker-compose build
 
 up:
 	docker-compose up -d

@@ -265,10 +265,40 @@ def series_details(imdb_id):
             my_list = db_service.get_my_list()
         
         if not series:
-            return "Series not found", 404
+            # If not in database, try to fetch from TMDB using IMDB ID
+            find_url = f"{api_config.TMDB_BASE_URL}/find/{imdb_id}"
+            params = {'external_source': 'imdb_id'}
+            params_str = str(params)
+            find_data = get_cached_tmdb_data(find_url, params_str)
+            
+            tv_results = find_data.get('tv_results', [])
+            if not tv_results:
+                return "Series not found", 404
+            
+            # Get the TMDB ID from the results
+            tmdb_id = tv_results[0].get('id')
+            
+            # Fetch full TV show details
+            tv_url = f"{api_config.TMDB_BASE_URL}/tv/{tmdb_id}"
+            tv_data = get_cached_tmdb_data(tv_url, "")
+            
+            # Create series_dict from TMDB data
+            series_dict = {
+                'title': tv_data.get('name'),
+                'overview': tv_data.get('overview'),
+                'poster_path': tv_data.get('poster_path'),
+                'backdrop_path': tv_data.get('backdrop_path'),
+                'first_air_date': tv_data.get('first_air_date'),
+                'vote_average': tv_data.get('vote_average'),
+                'vote_count': tv_data.get('vote_count'),
+                'popularity': tv_data.get('popularity'),
+                'tmdb_id': tmdb_id,
+                'imdb_id': imdb_id
+            }
+        else:
+            series_dict = series.to_dict()
         
-        series_dict = series.to_dict()
-        tmdb_id = series.tmdb_id
+        tmdb_id = series_dict.get('tmdb_id')
         
         # Fetch detailed information from TMDB
         if tmdb_id:
@@ -384,9 +414,21 @@ def season_episodes(imdb_id, season_number):
             series = db_service.get_tvshow_by_imdb_id(imdb_id)
         
         if not series:
-            return "Series not found", 404
-        
-        tmdb_id = series.tmdb_id
+            # If not in database, try to fetch from TMDB using IMDB ID
+            find_url = f"{api_config.TMDB_BASE_URL}/find/{imdb_id}"
+            params = {'external_source': 'imdb_id'}
+            params_str = str(params)
+            find_data = get_cached_tmdb_data(find_url, params_str)
+            
+            tv_results = find_data.get('tv_results', [])
+            if not tv_results:
+                return "Series not found", 404
+            
+            tmdb_id = tv_results[0].get('id')
+            series_title = tv_results[0].get('name')
+        else:
+            tmdb_id = series.tmdb_id
+            series_title = series.title
         
         # Fetch season details from TMDB
         if tmdb_id:
@@ -413,8 +455,18 @@ def season_episodes(imdb_id, season_number):
                 'episodes': episodes
             }
             
+            # Create series dict for template
+            if series:
+                series_dict = series.to_dict()
+            else:
+                series_dict = {
+                    'title': series_title,
+                    'tmdb_id': tmdb_id,
+                    'imdb_id': imdb_id
+                }
+            
             return render_template('season_details.html', 
-                                 series=series.to_dict(), 
+                                 series=series_dict, 
                                  season=season_info,
                                  imdb_id=imdb_id,
                                  tmdb_id=tmdb_id)
@@ -431,10 +483,21 @@ def watch_episode(imdb_id, season_number, episode_number):
             series = db_service.get_tvshow_by_imdb_id(imdb_id)
         
         if not series:
-            return "Series not found", 404
-        
-        tmdb_id = series.tmdb_id
-        title = series.title
+            # If not in database, try to fetch from TMDB using IMDB ID
+            find_url = f"{api_config.TMDB_BASE_URL}/find/{imdb_id}"
+            params = {'external_source': 'imdb_id'}
+            params_str = str(params)
+            find_data = get_cached_tmdb_data(find_url, params_str)
+            
+            tv_results = find_data.get('tv_results', [])
+            if not tv_results:
+                return "Series not found", 404
+            
+            tmdb_id = tv_results[0].get('id')
+            title = tv_results[0].get('name')
+        else:
+            tmdb_id = series.tmdb_id
+            title = series.title
         
         # Generate multiple embed sources using config
         embed_sources = get_embed_sources('episode', tmdb_id or imdb_id, season_number, episode_number)

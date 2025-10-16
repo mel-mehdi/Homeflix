@@ -92,31 +92,31 @@ def get_embed_sources(media_type: str, identifier: str, season: Optional[int] = 
     """
     if media_type == 'movie':
         return [
-            f"https://vidsrc.to/embed/movie/{identifier}",
+            f"https://vidsrc.me/embed/movie?tmdb={identifier}",
             f"https://vidsrc.pm/embed/movie/{identifier}",
-            f"https://www.2embed.cc/embed/{identifier}",
+            f"https://vidsrc.to/embed/movie/{identifier}",
             f"https://vidsrc.xyz/embed/movie?tmdb={identifier}",
             f"https://vidsrc.pro/embed/movie/{identifier}",
-            f"https://vidsrc.me/embed/movie?tmdb={identifier}",
+            f"https://www.2embed.cc/embed/{identifier}",
             f"https://multiembed.mov/?video_id={identifier}&tmdb=1",
             f"https://autoembed.co/movie/tmdb/{identifier}",
         ]
     elif media_type == 'tv':
         return [
+            f"https://vidsrc.me/embed/tv?tmdb={identifier}",
             f"https://vidsrc.xyz/embed/tv?tmdb={identifier}",
             f"https://vidsrc.pro/embed/tv/{identifier}",
-            f"https://vidsrc.me/embed/tv?tmdb={identifier}",
             f"https://www.2embed.cc/embedtv/{identifier}",
             f"https://vidsrc.to/embed/tv/{identifier}",
         ]
     elif media_type == 'episode' and season is not None and episode is not None:
         return [
-            f"https://vidsrc.to/embed/tv/{identifier}/{season}/{episode}",
+            f"https://vidsrc.me/embed/tv?tmdb={identifier}&season={season}&episode={episode}",
             f"https://vidsrc.pm/embed/tv/{identifier}/{season}/{episode}",
-            f"https://www.2embed.cc/embedtv/{identifier}&s={season}&e={episode}",
+            f"https://vidsrc.to/embed/tv/{identifier}/{season}/{episode}",
             f"https://vidsrc.xyz/embed/tv?tmdb={identifier}&season={season}&episode={episode}",
             f"https://vidsrc.pro/embed/tv/{identifier}/{season}/{episode}",
-            f"https://vidsrc.me/embed/tv?tmdb={identifier}&season={season}&episode={episode}",
+            f"https://www.2embed.cc/embedtv/{identifier}&s={season}&e={episode}",
             f"https://multiembed.mov/?video_id={identifier}&tmdb=1&s={season}&e={episode}",
             f"https://autoembed.co/tv/tmdb/{identifier}-{season}-{episode}",
         ]
