@@ -92,34 +92,25 @@ function updateHeroContent(index) {
     }
 
     
-    // Update background FIRST before fading out content
-    if (backdropUrls[index]) {
-        const imageUrl = backdropUrls[index];
-        const preloadedImg = preloadedImages.get(imageUrl);
-        
-        // Check if image is preloaded and ready
-        if (preloadedImg && preloadedImg.complete && preloadedImg.naturalHeight !== 0) {
+    // Add fade-out effect to content
+    heroInfo.classList.add('fade-out');
+    heroInfo.classList.remove('fade-in');
+    
+    // Wait for fade-out to complete before updating content
+    setTimeout(() => {
+        // Update background with smooth transition
+        if (backdropUrls[index]) {
+            const imageUrl = backdropUrls[index];
+            const preloadedImg = preloadedImages.get(imageUrl);
+            
             // Apply immediately with smooth transition
-            heroBanner.style.transition = 'background-image 0.5s ease-in-out';
             heroBanner.style.backgroundImage = `url('${imageUrl}')`;
             heroBanner.style.backgroundSize = 'cover';
             heroBanner.style.backgroundPosition = 'center';
         } else {
-            heroBanner.style.transition = 'background-image 0.5s ease-in-out';
-            heroBanner.style.backgroundImage = `url('${imageUrl}')`;
-            heroBanner.style.backgroundSize = 'cover';
-            heroBanner.style.backgroundPosition = 'center';
+            console.error(`No backdrop URL at index ${index}`);
         }
-    } else {
-        console.error(`No backdrop URL at index ${index}`);
-    }
-    
-    // Add fade-out effect to content
-    heroInfo.style.opacity = '0';
-    heroInfo.style.transition = 'opacity 0.3s ease-in-out';
-    
-    // Wait for fade-out to complete before updating content
-    setTimeout(() => {
+        
         // Update maturity rating badge
         const maturityBadge = heroBanner.querySelector('.hero-maturity-badge span');
         if (maturityBadge) {
@@ -225,9 +216,12 @@ function updateHeroContent(index) {
             prevImg.src = backdropUrls[prevIndex];
         }
         
-        // Fade content back in
-        heroInfo.style.opacity = '1';
-    }, 300); // Match this with the fade-out duration
+        // Fade content back in with improved animation
+        setTimeout(() => {
+            heroInfo.classList.remove('fade-out');
+            heroInfo.classList.add('fade-in');
+        }, 50);
+    }, 400); // Match this with the fade-out duration
 }
 
 // Reinitialize hero buttons after content update
