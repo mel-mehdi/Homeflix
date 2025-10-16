@@ -1124,6 +1124,32 @@ class DatabaseService:
                         'overview': media_dict.get('overview'),
                     })
             
+            # Normalize keys expected by templates/frontend:
+            # - Templates expect `progress` and `duration` (in seconds) and may compute percent as progress/duration
+            # - The DB model uses `progress_seconds` and `duration_seconds` so map them here and provide safe defaults
+            try:
+                progress_seconds = int(history_dict.get('progress_seconds', 0) or 0)
+            except Exception:
+                progress_seconds = 0
+
+            try:
+                duration_seconds = int(history_dict.get('duration_seconds', 0) or 0)
+            except Exception:
+                duration_seconds = 0
+
+            # Avoid division by zero in templates by ensuring duration at least 1
+            if duration_seconds <= 0:
+                duration_seconds = 1
+
+            history_dict['progress'] = progress_seconds
+            history_dict['duration'] = duration_seconds
+
+            # Provide a convenient percent value (rounded) for consumers that expect it
+            try:
+                history_dict['progress_percent'] = round((progress_seconds / duration_seconds) * 100, 2)
+            except Exception:
+                history_dict['progress_percent'] = 0.0
+
             result.append(history_dict)
         
         return result

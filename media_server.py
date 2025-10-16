@@ -1050,7 +1050,7 @@ def get_watch_progress_api(media_type, media_id):
             if watch_record:
                 return jsonify({
                     'success': True,
-                    'progress': watch_record.to_dict()
+                    'progress': watch_record
                 })
             else:
                 return jsonify({
