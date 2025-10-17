@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homeflix - Responsive Breakpoints Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #141414 0%, #1a1a1a 100%);
+            color: #ffffff;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #e50914;
+            font-size: 48px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            margin-bottom: 50px;
+            color: #999;
+            font-size: 18px;
+        }
+        
+        .breakpoint {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(229, 9, 20, 0.3);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+        
+        .breakpoint:hover {
+            border-color: #e50914;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(229, 9, 20, 0.2);
+        }
+        
+        .breakpoint-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .breakpoint-title {
+            font-size: 28px;
+            color: #e50914;
+            font-weight: 700;
+        }
+        
+        .breakpoint-range {
+            background: rgba(229, 9, 20, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #e50914;
+        }
+        
+        .breakpoint-device {
+            font-size: 16px;
+            color: #999;
+            margin-bottom: 15px;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .feature {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #e50914;
+        }
+        
+        .feature-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+        
+        .feature-value {
+            color: #999;
+            font-size: 14px;
+        }
+        
+        .visual-demo {
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .demo-grid {
+            display: grid;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .demo-card {
+            background: linear-gradient(135deg, #e50914, #b20710);
+            aspect-ratio: 2/3;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .legend {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 30px;
+            margin-top: 40px;
+        }
+        
+        .legend-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #e50914;
+        }
+        
+        .legend-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .legend-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #e50914;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        
+        /* Responsive demos */
+        .demo-grid-desktop { grid-template-columns: repeat(6, 1fr); }
+        .demo-grid-laptop { grid-template-columns: repeat(5, 1fr); }
+        .demo-grid-tablet-l { grid-template-columns: repeat(4, 1fr); }
+        .demo-grid-tablet { grid-template-columns: repeat(3, 1fr); }
+        .demo-grid-mobile-l { grid-template-columns: repeat(2, 1fr); }
+        .demo-grid-mobile { grid-template-columns: repeat(2, 1fr); }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 32px; }
+            .subtitle { font-size: 16px; }
+            .breakpoint { padding: 20px; }
+            .breakpoint-title { font-size: 22px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 Homeflix Mobile Breakpoints</h1>
+        <p class="subtitle">Visual guide to responsive design across all device sizes</p>
+        
+        <!-- Desktop -->
+        <div class="breakpoint">
+            <div class="breakpoint-header">
+                <div class="breakpoint-title">🖥️ Desktop</div>
+                <div class="breakpoint-range">&gt; 1400px</div>
+            </div>
+            <div class="breakpoint-device">Large desktops, monitors, TVs</div>
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-title">Grid Layout</div>
+                    <div class="feature-value">6 columns per row</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">Navigation</div>
+                    <div class="feature-value">Full horizontal menu</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">Hero Height</div>
+                    <div class="feature-value">Max 800px</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">Font Size</div>
+                    <div class="feature-value">Base 1.4rem</div>
+                </div>
+            </div>
+            <div class="visual-demo">
+                <strong>Content Grid Preview:</strong>
+                <div class="demo-grid demo-grid-desktop">
+                    <div class="demo-card">Card 1</div>
+                    <div class="demo-card">Card 2</div>
+                    <div class="demo-card">Card 3</div>
+                    <div class="demo-card">Card 4</div>
+                    <div class="demo-card">Card 5</div>
+                    <div class="demo-card">Card 6</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Laptop -->
+        <div class="breakpoint">
+            <div class="breakpoint-header">
+                <div class="breakpoint-title">💻 Laptop</div>
+                <div class="breakpoint-range">951px - 1400px</div>
+            </div>
+            <div class="breakpoint-device">Standard laptops, smaller monitors</div>
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-title">Grid Layout</div>
+                    <div class="feature-value">4-5 columns per row</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">Navigation</div>
+                    <div class="feature-value">Full horizontal menu</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">Hero Height</div>
+                    <div class="feature-value">56.25vw</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">Touch Targets</div>
+                    <div class="feature-value">Standard size</div>
+                </div>
+            </div>
+            <div class="visual-demo">
+                <strong>Content Grid Preview:</strong>
+                <div class="demo-grid demo-grid-laptop">
+                    <div class="demo-card">1</div>
+                    <div class="demo-card">2</div>
+                    <div class="demo-card">3</div>
+                    <div class="demo-card">4</div>
+                    <div class="demo-card">5</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tablet Landscape -->
+        <div class="breakpoint">
+            <div class="breakpoint-header">
+                <div class="breakpoint-title">📱 Tablet Landscape</div>
+                <div class="breakpoint-range">741px - 950px</div>
+            </div>
+            <div class="breakpoint-device">iPad landscape, Android tablets</div>
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-title">Grid Layout</div>
+                    <div class="feature-value">3-4 columns per row</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">Navigation</div>
+                    <div class="feature-value">Hamburger menu</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">Hero Height</div>
+                    <div class="feature-value">70vh</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">Touch Targets</div>
+                    <div class="feature-value">44px minimum</div>
+                </div>
+            </div>
+            <div class="visual-demo">
+                <strong>Content Grid Preview:</strong>
+                <div class="demo-grid demo-grid-tablet-l">
+                    <div class="demo-card">1</div>
+                    <div class="demo-card">2</div>
+                    <div class="demo-card">3</div>
+                    <div class="demo-card">4</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tablet Portrait -->
+        <div class="breakpoint">
+            <div class="breakpoint-header">
+                <div class="breakpoint-title">📱 Tablet Portrait</div>
+                <div class="breakpoint-range">501px - 740px</div>
+            </div>
+            <div class="breakpoint-device">iPad portrait, large phones</div>
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-title">Grid Layout</div>
+                    <div class="feature-value">2-3 columns per row</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">Navigation</div>
+                    <div class="feature-value">Compact hamburger</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">Hero Height</div>
+                    <div class="feature-value">65vh</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">Buttons</div>
+                    <div class="feature-value">Larger, touch-friendly</div>
+                </div>
+            </div>
+            <div class="visual-demo">
+                <strong>Content Grid Preview:</strong>
+                <div class="demo-grid demo-grid-tablet">
+                    <div class="demo-card">1</div>
+                    <div class="demo-card">2</div>
+                    <div class="demo-card">3</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Large -->
+        <div class="breakpoint">
+            <div class="breakpoint-header">
+                <div class="breakpoint-title">📱 Mobile Large</div>
+                <div class="breakpoint-range">376px - 500px</div>
+            </div>
+            <div class="breakpoint-device">iPhone Plus, large Android phones</div>
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-title">Grid Layout</div>
+                    <div class="feature-value">2 columns per row</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">Navigation</div>
+                    <div class="feature-value">Mobile-optimized</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">Hero Height</div>
+                    <div class="feature-value">60vh</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">Typography</div>
+                    <div class="feature-value">Scaled for readability</div>
+                </div>
+            </div>
+            <div class="visual-demo">
+                <strong>Content Grid Preview:</strong>
+                <div class="demo-grid demo-grid-mobile-l">
+                    <div class="demo-card">1</div>
+                    <div class="demo-card">2</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Standard -->
+        <div class="breakpoint">
+            <div class="breakpoint-header">
+                <div class="breakpoint-title">📱 Mobile Standard</div>
+                <div class="breakpoint-range">&lt; 375px</div>
+            </div>
+            <div class="breakpoint-device">iPhone SE, small Android phones</div>
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-title">Grid Layout</div>
+                    <div class="feature-value">2 columns per row</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">Navigation</div>
+                    <div class="feature-value">Fully optimized</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">Hero Height</div>
+                    <div class="feature-value">Minimum 300px</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">Spacing</div>
+                    <div class="feature-value">Compact, efficient</div>
+                </div>
+            </div>
+            <div class="visual-demo">
+                <strong>Content Grid Preview:</strong>
+                <div class="demo-grid demo-grid-mobile">
+                    <div class="demo-card">1</div>
+                    <div class="demo-card">2</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-title">🎯 Key Features Across All Breakpoints</div>
+            <div class="legend-items">
+                <div class="legend-item">
+                    <div class="legend-icon">✓</div>
+                    <div>Touch-friendly interactions (44px min)</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-icon">✓</div>
+                    <div>Smooth animations and transitions</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-icon">✓</div>
+                    <div>Responsive typography</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-icon">✓</div>
+                    <div>Optimized image loading</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-icon">✓</div>
+                    <div>Mobile menu navigation</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-icon">✓</div>
+                    <div>Adaptive grid layouts</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-icon">✓</div>
+                    <div>iOS safe area support</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-icon">✓</div>
+                    <div>Performance optimized</div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 40px; padding: 20px; background: rgba(229, 9, 20, 0.1); border-radius: 12px;">
+            <h3 style="color: #e50914; margin-bottom: 10px;">🎉 Your site is now fully optimized for mobile!</h3>
+            <p style="color: #999;">Test on different devices to see these breakpoints in action</p>
+        </div>
+    </div>
+</body>
+</html>

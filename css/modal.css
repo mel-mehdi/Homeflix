@@ -189,6 +189,8 @@
     .my-list-modal-content {
         width: 95%;
         max-height: 90vh;
+        margin: 5vh auto;
+        border-radius: 12px;
     }
     
     .my-list-modal-header {
@@ -199,19 +201,119 @@
         font-size: 24px;
     }
     
+    .close-modal-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 28px;
+    }
+    
     .my-list-modal-body {
         padding: 16px 20px;
     }
     
     .my-list-grid {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 16px;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 12px;
+    }
+    
+    .my-list-item {
+        border-radius: 6px;
+    }
+    
+    .my-list-item-image {
+        height: 220px;
+    }
+    
+    .my-list-item-info {
+        padding: 10px;
+    }
+    
+    .my-list-item-title {
+        font-size: 14px;
+    }
+    
+    .my-list-item-meta {
+        font-size: 12px;
+    }
+    
+    .remove-from-list-btn {
+        padding: 6px 14px;
+        font-size: 13px;
+        min-height: 36px;
     }
 }
 
 @media (max-width: 480px) {
+    .my-list-modal-content {
+        width: 98%;
+        max-height: 92vh;
+        margin: 4vh auto;
+        border-radius: 10px;
+    }
+    
+    .my-list-modal-header {
+        padding: 12px 16px;
+    }
+    
+    .my-list-modal-header h2 {
+        font-size: 20px;
+    }
+    
+    .close-modal-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 24px;
+    }
+    
+    .my-list-modal-body {
+        padding: 12px 16px;
+    }
+    
     .my-list-grid {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-        gap: 12px;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    
+    .my-list-item {
+        border-radius: 5px;
+    }
+    
+    .my-list-item-image {
+        height: 200px;
+    }
+    
+    .my-list-item-info {
+        padding: 8px;
+    }
+    
+    .my-list-item-title {
+        font-size: 13px;
+    }
+    
+    .my-list-item-meta {
+        font-size: 11px;
+    }
+    
+    .remove-from-list-btn {
+        padding: 5px 12px;
+        font-size: 12px;
+        min-height: 32px;
+    }
+}
+
+/* Touch-friendly improvements for modals */
+@media (hover: none) and (pointer: coarse) {
+    .close-modal-btn,
+    .remove-from-list-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    .my-list-item:active {
+        transform: scale(0.98);
+    }
+    
+    .remove-from-list-btn:active {
+        background: #c5000a;
     }
 }

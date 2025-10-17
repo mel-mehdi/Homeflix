@@ -6,6 +6,7 @@
 
 html {
     font-size: 62.5%;
+    -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
 }
 
@@ -21,6 +22,10 @@ body {
     -moz-user-select: none; /* Prevent text selection on Firefox */
     -ms-user-select: none; /* Prevent text selection on IE/Edge */
     user-select: none; /* Prevent text selection */
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
 }
 
 /* Allow text selection only for specific elements */
@@ -33,6 +38,22 @@ textarea,
     -ms-user-select: text;
     user-select: text;
     cursor: text;
+}
+
+/* Prevent text size adjustment on mobile devices */
+@media screen and (max-width: 950px) {
+    body {
+        -webkit-text-size-adjust: 100%;
+        -moz-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+    }
+}
+
+/* Better tap highlight for mobile */
+* {
+    -webkit-tap-highlight-color: rgba(229, 9, 20, 0.2);
+    tap-highlight-color: rgba(229, 9, 20, 0.2);
 }
 
 /* Ensure all clickable elements have pointer cursor */
@@ -871,6 +892,96 @@ a,
     animation: spin 0.8s linear infinite;
 }
 /* Responsive Design */
+
+/* Mobile-First Enhancements */
+/* Smooth scrolling for all devices */
+html {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+/* Improved touch targets for mobile */
+button, a, .clickable {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Prevent text size adjustment on mobile devices */
+body {
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+/* Better tap highlight for mobile */
+* {
+    -webkit-tap-highlight-color: rgba(229, 9, 20, 0.2);
+    tap-highlight-color: rgba(229, 9, 20, 0.2);
+}
+
+/* Mobile Navigation Menu */
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: #ffffff;
+    padding: 8px;
+    cursor: pointer;
+    margin-right: 15px;
+    z-index: 1001;
+}
+
+.mobile-menu-toggle svg {
+    width: 24px;
+    height: 24px;
+}
+
+.mobile-nav-menu {
+    display: none;
+    position: fixed;
+    top: 68px;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.98);
+    backdrop-filter: blur(10px);
+    z-index: 998;
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    max-height: calc(100vh - 68px);
+    overflow-y: auto;
+}
+
+.mobile-nav-menu.active {
+    display: block;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.mobile-nav-menu .nav-link {
+    display: block;
+    padding: 15px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 16px;
+}
+
+.mobile-nav-menu .nav-link:last-child {
+    border-bottom: none;
+}
+
 @media screen and (max-width: 1400px) {
     .hero-title {
         font-size: 4.2vw;
@@ -898,21 +1009,38 @@ a,
         display: none;
     }
     
+    .mobile-menu-toggle {
+        display: flex;
+    }
+    
     .navbar {
         padding: 0 20px;
+        height: 60px;
+    }
+    
+    .netflix-logo {
+        font-size: 24px;
+        margin-right: 15px;
+    }
+    
+    .hero-banner {
+        height: 70vh;
+        min-height: 450px;
     }
     
     .hero-content {
-        width: 50%;
+        width: 55%;
         margin-left: 20px;
     }
     
     .hero-title {
         font-size: 6vw;
+        margin-bottom: 2vw;
     }
     
     .hero-overview {
         font-size: 2.5vw;
+        line-height: 1.5;
     }
     
     .hero-synopsis-full p {
@@ -925,11 +1053,23 @@ a,
         padding: 6px 16px;
     }
     
+    .hero-nav-arrow {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .hero-nav-prev {
+        left: 10px;
+    }
+    
+    .hero-nav-next {
+        right: 10px;
+    }
 
     .btn {
         font-size: 2vw;
-        min-height: 36px;
-        padding: 6px 16px;
+        min-height: 40px;
+        padding: 8px 16px;
     }
     
     .btn svg {
@@ -938,36 +1078,70 @@ a,
         margin-right: 6px;
     }
     
+    .btn-icon {
+        padding: 8px;
+        width: 40px;
+        height: 40px;
+    }
+    
     .row-title {
         font-size: 3vw;
+        margin-bottom: 15px;
     }
     
     .slider-container {
-        grid-template-columns: repeat(auto-fill, minmax(30vw, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(32vw, 1fr));
+        gap: 10px;
     }
     
     .title-card-image {
-        height: 16.875vw;
+        height: 18vw;
+    }
+    
+    .content-row {
+        padding: 0 20px;
+        margin-bottom: 30px;
+    }
+    
+    .search-container.active {
+        width: 220px;
     }
 }
 
 @media screen and (max-width: 740px) {
+    .navbar {
+        height: 56px;
+        padding: 0 15px;
+    }
+    
+    .netflix-logo {
+        font-size: 20px;
+    }
+    
     .hero-banner {
+        height: 65vh;
         min-height: 400px;
     }
     
     .hero-content {
-        width: 70%;
+        width: 75%;
+        margin-left: 15px;
     }
     
     .hero-title {
-        font-size: 8vw;
+        font-size: 7vw;
         margin-bottom: 3vw;
     }
     
     .hero-overview {
-        font-size: 3.5vw;
+        font-size: 3vw;
         margin-bottom: 4vw;
+        line-height: 1.4;
+    }
+    
+    .hero-buttons {
+        gap: 8px;
+        flex-wrap: wrap;
     }
     
     .hero-expanded-info {
@@ -984,188 +1158,334 @@ a,
         font-size: 2vw;
         padding: 8px 16px;
     }
-
     
+    .hero-nav-arrow {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .hero-nav-arrow svg {
+        width: 24px;
+        height: 24px;
+    }
+
     .btn {
-        font-size: 3vw;
-        min-height: 32px;
-        padding: 4px 12px;
+        font-size: 2.8vw;
+        min-height: 36px;
+        padding: 6px 14px;
+    }
+    
+    .btn-icon {
+        width: 36px;
+        height: 36px;
+        padding: 6px;
     }
     
     .row-title {
         font-size: 4vw;
+        margin-bottom: 12px;
     }
     
     .slider-container {
-        grid-template-columns: repeat(auto-fill, minmax(40vw, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(42vw, 1fr));
+        gap: 8px;
     }
     
     .title-card-image {
-        height: 22.5vw;
+        height: 24vw;
+        border-radius: 4px;
     }
     
     .content-row {
-        padding: 0 20px;
+        padding: 0 15px;
+        margin-bottom: 25px;
+    }
+    
+    /* Improved mobile card interactions */
+    .title-card:active {
+        transform: scale(0.98);
+    }
+    
+    .title-card-metadata {
+        padding: 8px;
+    }
+    
+    .metadata-top svg {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .title-card-title {
+        font-size: 13px;
+    }
+    
+    .genre-tag {
+        font-size: 11px;
+        padding: 2px 6px;
+    }
+    
+    /* Mobile search improvements */
+    .search-container {
+        margin-right: 12px;
+    }
+    
+    .search-container.active {
+        width: calc(100vw - 120px);
+        max-width: 300px;
+    }
+    
+    .profile-avatar,
+    .avatar-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
     }
 }
 
 @media screen and (max-width: 500px) {
+    .navbar {
+        height: 52px;
+        padding: 0 12px;
+    }
+    
+    .netflix-logo {
+        font-size: 18px;
+    }
+    
+    .hero-banner {
+        height: 60vh;
+        min-height: 350px;
+    }
+    
     .hero-content {
-        width: 90%;
+        width: 85%;
+        margin-left: 12px;
+    }
+    
+    .hero-title {
+        font-size: 9vw;
+        margin-bottom: 3vw;
+    }
+    
+    .hero-overview {
+        font-size: 3.5vw;
+        margin-bottom: 5vw;
+    }
+    
+    .hero-buttons {
+        gap: 6px;
+    }
+    
+    .btn {
+        font-size: 3.5vw;
+        min-height: 32px;
+        padding: 5px 12px;
+        border-radius: 3px;
+    }
+    
+    .btn svg {
+        width: 16px;
+        height: 16px;
+        margin-right: 4px;
+    }
+    
+    .btn-icon {
+        width: 32px;
+        height: 32px;
+        padding: 5px;
+    }
+    
+    .hero-nav-arrow {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .hero-nav-arrow svg {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .hero-nav-prev {
+        left: 5px;
+    }
+    
+    .hero-nav-next {
+        right: 5px;
+    }
+    
+    .row-title {
+        font-size: 5vw;
+        margin-bottom: 10px;
+    }
+    
+    .slider-container {
+        grid-template-columns: repeat(auto-fill, minmax(45vw, 1fr));
+        gap: 6px;
+    }
+    
+    .title-card-image {
+        height: 28vw;
+        border-radius: 3px;
+    }
+    
+    .content-row {
+        padding: 0 12px;
+        margin-bottom: 20px;
+    }
+    
+    .placeholder-image {
+        font-size: 6vw;
+    }
+    
+    /* Stack hero buttons on very small screens */
+    .hero-buttons {
+        flex-direction: row;
+    }
+    
+    .btn-primary {
+        flex: 1;
+        min-width: 100px;
+    }
+    
+    .btn-secondary {
+        flex: 1;
+        min-width: 100px;
+    }
+    
+    /* Mobile card hover effects - use active state */
+    .title-card-metadata {
+        position: static;
+        opacity: 1;
+        transform: none;
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.7) 70%, transparent 100%);
+        padding: 6px;
+    }
+    
+    .metadata-top {
+        gap: 6px;
+    }
+    
+    .metadata-top svg {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .title-card-title {
+        font-size: 12px;
+    }
+    
+    .genre-tag {
+        font-size: 10px;
+        padding: 2px 5px;
+    }
+    
+    /* Mobile search */
+    .search-container.active {
+        width: calc(100vw - 100px);
+        max-width: 280px;
+    }
+    
+    .search-input {
+        font-size: 14px;
+    }
+    
+    .search-suggestions {
+        max-height: 300px;
+    }
+    
+    .suggestion-item {
+        padding: 10px 12px;
+    }
+    
+    .profile-avatar,
+    .avatar-icon {
+        width: 26px;
+        height: 26px;
+        font-size: 11px;
+    }
+}
+
+/* Extra small devices - phones in portrait */
+@media screen and (max-width: 375px) {
+    .hero-banner {
+        min-height: 300px;
     }
     
     .hero-title {
         font-size: 10vw;
     }
     
-    .hero-overview {
-        font-size: 4.5vw;
+    .slider-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .title-card-image {
+        height: 32vw;
     }
     
     .btn {
         font-size: 4vw;
-        min-height: 28px;
+    }
+}
+
+/* Landscape mode optimizations for mobile */
+@media screen and (max-height: 500px) and (orientation: landscape) {
+    .navbar {
+        height: 48px;
     }
     
-    .slider-container {
-        grid-template-columns: repeat(auto-fill, minmax(60vw, 1fr));
+    .hero-banner {
+        height: 85vh;
+        min-height: 300px;
     }
     
-    .title-card-image {
-        height: 33.75vw;
+    .hero-title {
+        font-size: 5vw;
     }
     
-    .placeholder-image {
-        font-size: 6vw;
+    .hero-overview {
+        font-size: 2vw;
+    }
+    
+    .btn {
+        font-size: 2vw;
+        min-height: 32px;
+        padding: 4px 10px;
+    }
+    
+    .content-row {
+        margin-bottom: 15px;
     }
 }
 
-/* Search Suggestions Dropdown */
-.search-suggestions {
-    position: absolute;
-    top: calc(100% + 5px);
-    left: 0;
-    width: 100%; /* Match parent container width */
-    background: rgba(0, 0, 0, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    max-height: 400px;
-    overflow-y: auto;
-    z-index: 1000;
-    display: none;
-    backdrop-filter: blur(20px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-}
-
-.search-suggestions.show {
-    display: block;
-}
-
-.suggestion-item {
-    display: flex;
-    align-items: center;
-    padding: 12px 16px;
-    cursor: pointer;
-    transition: background 0.15s;
-    gap: 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.suggestion-item:last-child {
-    border-bottom: none;
-}
-
-.suggestion-item:hover {
-    background: rgba(255, 255, 255, 0.15);
-}
-
-.suggestion-item.loading,
-.suggestion-item.error,
-.suggestion-item.no-results {
-    justify-content: center;
-    cursor: default;
-    color: #999;
-    font-size: 14px;
-}
-
-.suggestion-item.loading:hover,
-.suggestion-item.error:hover,
-.suggestion-item.no-results:hover {
-    background: transparent;
-}
-
-.suggestion-icon {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-    color: #999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.suggestion-title {
-    flex: 1;
-    font-size: 14px;
-    font-weight: 400;
-    color: #fff;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.suggestion-title strong {
-    font-weight: 600;
-    color: #e50914;
-}
-
-.suggestion-year {
-    color: #999;
-    margin-left: 6px;
-    font-size: 13px;
-}
-
-.suggestion-type {
-    text-transform: capitalize;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 2px 8px;
-    border-radius: 3px;
-    font-size: 11px;
-    color: #aaa;
-    flex-shrink: 0;
-}
-
-/* Custom scrollbar for suggestions */
-.search-suggestions::-webkit-scrollbar {
-    width: 8px;
-}
-
-.search-suggestions::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.search-suggestions::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-}
-
-.search-suggestions::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-/* Additional Netflix-style enhancements */
-
-/* .title-card-metadata {
-    box-shadow: 0 3px 10px rgba(255, 0, 0, 0.75);
-} */
-
-/* Focus states for accessibility */
-.btn:focus,
-.title-card:focus,
-.nav-link:focus,
-.search-input:focus {
-    outline: 2px solid #ffffff;
-    outline-offset: 2px;
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+    /* For touch devices, always show metadata */
+    .title-card-metadata {
+        opacity: 1;
+    }
+    
+    /* Increase touch target sizes */
+    .title-card-play-button,
+    .title-card-add-button,
+    .title-card-like-button,
+    .title-card-expand-button {
+        padding: 10px;
+    }
+    
+    /* Remove hover animations on touch devices */
+    .title-card:hover {
+        transform: none;
+    }
+    
+    /* Use tap/active state instead */
+    .title-card:active {
+        transform: scale(0.97);
+    }
+    
+    .btn:active {
+        transform: scale(0.96);
+    }
 }
 
 /* Loading states */
@@ -1264,4 +1584,13 @@ a,
     animation: shimmer 2s infinite linear;
     background: linear-gradient(to right, #2f2f2f 4%, #3a3a3a 25%, #2f2f2f 36%);
     background-size: 1000px 100%;
+}
+
+/* Focus states for accessibility */
+.btn:focus,
+.title-card:focus,
+.nav-link:focus,
+.search-input:focus {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
 }

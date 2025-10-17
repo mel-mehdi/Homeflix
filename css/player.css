@@ -818,3 +818,451 @@ textarea {
 .next-episode-quick-btn:active {
     transform: translateY(-50%) scale(0.98);
 }
+
+/* Mobile Responsive Styles */
+
+/* Prevent pinch-to-zoom on double tap */
+video, iframe {
+    touch-action: manipulation;
+}
+
+/* Improved touch targets */
+button, a, .clickable {
+    min-height: 44px;
+    min-width: 44px;
+}
+
+/* Better tap highlight */
+* {
+    -webkit-tap-highlight-color: rgba(229, 9, 20, 0.2);
+}
+
+/* Tablet and below */
+@media screen and (max-width: 1024px) {
+    .player-controls {
+        padding: 15px 40px;
+    }
+    
+    .episode-title {
+        font-size: 24px;
+    }
+    
+    .series-info {
+        font-size: 14px;
+    }
+    
+    .source-switcher-btn {
+        padding: 8px 14px;
+        font-size: 13px;
+    }
+}
+
+/* Mobile devices */
+@media screen and (max-width: 768px) {
+    .player-controls {
+        padding: 12px 20px;
+        background: linear-gradient(
+            180deg,
+            rgba(0, 0, 0, 0.9) 0%,
+            rgba(0, 0, 0, 0.7) 40%,
+            transparent 100%
+        );
+    }
+    
+    .top-bar {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .back-button {
+        padding: 6px 12px;
+        font-size: 14px;
+        min-height: 36px;
+    }
+    
+    .episode-info {
+        margin-left: 0;
+        width: 100%;
+        order: 3;
+    }
+    
+    .episode-title {
+        font-size: 20px;
+        margin-bottom: 2px;
+    }
+    
+    .series-info {
+        font-size: 13px;
+    }
+    
+    .source-switcher-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+        margin-left: auto;
+    }
+    
+    .source-switcher-btn svg {
+        width: 16px;
+        height: 16px;
+    }
+    
+    /* Source menu optimizations */
+    .source-menu {
+        left: 10px;
+        right: 10px;
+        top: 10px;
+        bottom: 10px;
+        max-width: none;
+        max-height: none;
+        border-radius: 12px;
+    }
+    
+    .source-menu-header {
+        padding: 16px;
+    }
+    
+    .source-menu-header h3 {
+        font-size: 18px;
+    }
+    
+    .close-menu-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 24px;
+    }
+    
+    .source-info-top {
+        padding: 0 16px 12px;
+        font-size: 13px;
+    }
+    
+    .source-list {
+        padding: 0 12px 12px;
+        max-height: calc(100vh - 250px);
+    }
+    
+    .source-option {
+        padding: 14px 12px;
+        border-radius: 8px;
+    }
+    
+    .source-name {
+        font-size: 14px;
+    }
+    
+    .source-domain {
+        font-size: 11px;
+    }
+    
+    .troubleshooting-tips {
+        padding: 12px 16px;
+        margin: 12px;
+    }
+    
+    .direct-links {
+        padding: 12px 16px;
+        margin: 12px;
+    }
+    
+    .direct-link-buttons {
+        flex-direction: column;
+    }
+    
+    .direct-link-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+    
+    /* Loading indicator */
+    .loading-indicator {
+        padding: 20px;
+    }
+    
+    .loader {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .loading-indicator p {
+        font-size: 14px;
+    }
+    
+    .loading-source {
+        font-size: 12px;
+    }
+    
+    /* Error message */
+    .error-message {
+        padding: 20px;
+    }
+    
+    .error-message svg {
+        width: 48px;
+        height: 48px;
+    }
+    
+    .error-message h2 {
+        font-size: 22px;
+    }
+    
+    .error-message p {
+        font-size: 14px;
+    }
+    
+    .retry-button {
+        padding: 10px 20px;
+        font-size: 14px;
+        min-height: 44px;
+    }
+    
+    /* Next episode button */
+    .next-episode-quick-btn {
+        right: 20px;
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+}
+
+/* Small mobile devices */
+@media screen and (max-width: 480px) {
+    .player-controls {
+        padding: 10px 12px;
+    }
+    
+    .back-button {
+        padding: 5px 10px;
+        font-size: 13px;
+        min-height: 32px;
+    }
+    
+    .episode-info {
+        margin-top: 8px;
+    }
+    
+    .episode-title {
+        font-size: 16px;
+        line-height: 1.3;
+    }
+    
+    .series-info {
+        font-size: 12px;
+    }
+    
+    .source-switcher-btn {
+        padding: 5px 10px;
+        font-size: 11px;
+        gap: 4px;
+    }
+    
+    .source-switcher-btn svg {
+        width: 14px;
+        height: 14px;
+    }
+    
+    /* Source menu for small screens */
+    .source-menu {
+        left: 5px;
+        right: 5px;
+        top: 5px;
+        bottom: 5px;
+        border-radius: 10px;
+    }
+    
+    .source-menu-header {
+        padding: 12px;
+    }
+    
+    .source-menu-header h3 {
+        font-size: 16px;
+    }
+    
+    .close-menu-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 20px;
+    }
+    
+    .source-info-top {
+        padding: 0 12px 10px;
+        font-size: 12px;
+        line-height: 1.4;
+    }
+    
+    .source-list {
+        padding: 0 8px 8px;
+    }
+    
+    .source-option {
+        padding: 12px 10px;
+    }
+    
+    .source-option svg {
+        width: 14px;
+        height: 14px;
+    }
+    
+    .source-name {
+        font-size: 13px;
+    }
+    
+    .source-domain {
+        font-size: 10px;
+    }
+    
+    .source-status svg {
+        width: 10px;
+        height: 10px;
+    }
+    
+    .troubleshooting-tips,
+    .direct-links {
+        padding: 10px 12px;
+        margin: 8px;
+    }
+    
+    .tip-title {
+        font-size: 12px;
+    }
+    
+    .troubleshooting-tips li,
+    .direct-links p {
+        font-size: 11px;
+    }
+    
+    .direct-link-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+    
+    /* Loading and error states */
+    .loader {
+        width: 40px;
+        height: 40px;
+        border-width: 3px;
+    }
+    
+    .loading-indicator p {
+        font-size: 13px;
+    }
+    
+    .loading-source {
+        font-size: 11px;
+    }
+    
+    .error-message svg {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .error-message h2 {
+        font-size: 18px;
+    }
+    
+    .error-message p {
+        font-size: 13px;
+    }
+    
+    .retry-button {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+    
+    /* Next episode button */
+    .next-episode-quick-btn {
+        right: 12px;
+        padding: 8px 12px;
+        font-size: 12px;
+        border-radius: 6px;
+    }
+}
+
+/* Landscape mode for mobile */
+@media screen and (max-height: 500px) and (orientation: landscape) {
+    .player-controls {
+        padding: 8px 15px;
+    }
+    
+    .back-button {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+    
+    .episode-info {
+        display: none;
+    }
+    
+    .episode-title {
+        font-size: 14px;
+    }
+    
+    .source-switcher-btn {
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+    
+    .source-menu {
+        top: 10px;
+        bottom: 10px;
+        max-height: calc(100vh - 20px);
+    }
+    
+    .next-episode-quick-btn {
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+}
+
+/* Touch-friendly enhancements */
+@media (hover: none) and (pointer: coarse) {
+    /* Larger touch targets */
+    .back-button,
+    .source-switcher-btn,
+    .source-option,
+    .retry-button,
+    .direct-link-btn {
+        min-height: 44px;
+    }
+    
+    .close-menu-btn {
+        min-width: 44px;
+        min-height: 44px;
+    }
+    
+    /* Remove hover effects, use active states */
+    .back-button:active {
+        background: rgba(255, 255, 255, 0.15);
+    }
+    
+    .source-option:active {
+        transform: scale(0.98);
+    }
+    
+    .direct-link-btn:active {
+        transform: translateY(0);
+        background: rgba(33, 150, 243, 0.4);
+    }
+    
+    /* Hide controls after interaction */
+    .player-controls:not(:focus-within) {
+        transition: opacity 0.3s ease 3s;
+    }
+}
+
+/* iOS-specific fixes */
+@supports (-webkit-touch-callout: none) {
+    /* Fix for iOS safe areas */
+    .player-container {
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+    
+    .player-controls {
+        padding-top: max(12px, env(safe-area-inset-top));
+    }
+    
+    /* Fix iframe scrolling on iOS */
+    .video-wrapper iframe {
+        -webkit-overflow-scrolling: touch;
+    }
+}

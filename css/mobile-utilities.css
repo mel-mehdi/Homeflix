@@ -1,0 +1,119 @@
+/* 
+ * Mobile Touch Enhancements - Quick Reference
+ * Add these utility classes to elements that need mobile-specific styling
+ */
+
+/* Touch-friendly button sizes */
+.touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Prevent iOS text size adjustment */
+.no-text-adjust {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+/* Smooth momentum scrolling for iOS */
+.smooth-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+/* Better tap highlight */
+.tap-highlight {
+    -webkit-tap-highlight-color: rgba(229, 9, 20, 0.2);
+}
+
+/* Prevent text selection on mobile */
+.no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+}
+
+/* Hide on mobile */
+.hide-mobile {
+    @media (max-width: 768px) {
+        display: none !important;
+    }
+}
+
+/* Show only on mobile */
+.show-mobile {
+    display: none;
+    @media (max-width: 768px) {
+        display: block;
+    }
+}
+
+/* Active state for touch devices */
+.touch-active:active {
+    transform: scale(0.97);
+    opacity: 0.9;
+}
+
+/* Safe area padding for iOS notch */
+.safe-area-padding {
+    padding-top: max(12px, env(safe-area-inset-top));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+}
+
+/* GPU acceleration for smooth animations */
+.gpu-accelerated {
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
+}
+
+/* Responsive text sizes */
+.text-responsive-sm {
+    font-size: clamp(12px, 3vw, 14px);
+}
+
+.text-responsive-md {
+    font-size: clamp(14px, 3.5vw, 16px);
+}
+
+.text-responsive-lg {
+    font-size: clamp(16px, 4vw, 20px);
+}
+
+.text-responsive-xl {
+    font-size: clamp(20px, 5vw, 28px);
+}
+
+/* Mobile-friendly spacing */
+.mobile-spacing {
+    @media (max-width: 768px) {
+        padding: 12px;
+    }
+    @media (max-width: 480px) {
+        padding: 8px;
+    }
+}
+
+/* Prevent layout shift on mobile keyboards */
+.keyboard-stable {
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height */
+}
+
+/* Touch gesture optimization */
+.touch-pan-x {
+    touch-action: pan-x;
+}
+
+.touch-pan-y {
+    touch-action: pan-y;
+}
+
+.touch-manipulation {
+    touch-action: manipulation;
+}
