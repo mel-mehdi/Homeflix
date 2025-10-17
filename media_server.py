@@ -983,6 +983,271 @@ def search_suggestions():
         logger.error(f"Error in search_suggestions: {e}")
         return jsonify({'results': []})
 
+@app.route('/api/my-list', methods=['GET', 'POST'])
+def api_my_list():
+    """Get My List items or add/remove items via AJAX"""
+    if request.method == 'GET':
+        # Get My List items
+        try:
+            with DatabaseService() as db_service:
+                my_list = db_service.get_my_list()
+            
+            return jsonify({
+                'success': True,
+                'items': my_list
+            })
+        except Exception as e:
+            logger.error(f"Error fetching My List: {e}")
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'items': []
+            }), 500
+    
+    elif request.method == 'POST':
+        # Add or remove item from My List
+        try:
+            data = request.get_json()
+            action = data.get('action')
+            media_type = data.get('type')
+            media_id = data.get('id')
+            tmdb_id = data.get('tmdb_id')
+            title = data.get('title')
+            
+            if not all([action, media_type, media_id]):
+                return jsonify({
+                    'success': False,
+                    'error': 'Missing required fields'
+                }), 400
+            
+            with DatabaseService() as db_service:
+                if action == 'add':
+                    item, added = db_service.add_to_my_list(media_type, media_id, tmdb_id, title)
+                    return jsonify({
+                        'success': True,
+                        'action': 'added',
+                        'message': f'Added to My List'
+                    })
+                elif action == 'remove':
+                    removed = db_service.remove_from_my_list(media_type, media_id)
+                    return jsonify({
+                        'success': True,
+                        'action': 'removed',
+                        'message': f'Removed from My List'
+                    })
+                else:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Invalid action'
+                    }), 400
+        
+        except Exception as e:
+            logger.error(f"Error updating My List: {e}")
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+
+@app.route('/api/series_watch_status/<imdb_id>')
+def api_series_watch_status(imdb_id):
+    """Get watch status for all episodes in a series"""
+    try:
+        with DatabaseService() as db_service:
+            watch_status = db_service.get_series_watch_status(imdb_id)
+        
+        return jsonify({
+            'success': True,
+            'watched_by_season': watch_status.get('watched_by_season', {}),
+            'total_watched': watch_status.get('total_watched', 0)
+        })
+    except Exception as e:
+        logger.error(f"Error fetching series watch status for {imdb_id}: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'watched_by_season': {},
+            'total_watched': 0
+        }), 500
+
+@app.route('/api/season_watch_status/<imdb_id>/<int:season_number>')
+def api_season_watch_status(imdb_id, season_number):
+    """Get watch status for all episodes in a season"""
+    try:
+        with DatabaseService() as db_service:
+            watch_status = db_service.get_season_watch_status(imdb_id, season_number)
+        
+        return jsonify({
+            'success': True,
+            'watched_episodes': watch_status.get('watched_episodes', []),
+            'watched_count': watch_status.get('watched_count', 0)
+        })
+    except Exception as e:
+        logger.error(f"Error fetching season watch status for {imdb_id} S{season_number}: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'watched_episodes': [],
+            'watched_count': 0
+        }), 500
+
+@app.route('/api/watch_progress', methods=['POST'])
+def api_watch_progress():
+    """Save watch progress for continue watching feature"""
+    try:
+        data = request.get_json()
+        media_type = data.get('type')
+        media_id = data.get('id')
+        progress_seconds = data.get('progress', 0)
+        duration_seconds = data.get('duration', 0)
+        title = data.get('title', 'Unknown')
+        tmdb_id = data.get('tmdb_id')
+        season = data.get('season')
+        episode = data.get('episode')
+        poster_path = data.get('poster_path')
+        
+        if not all([media_type, media_id]):
+            return jsonify({
+                'success': False,
+                'error': 'Missing required fields'
+            }), 400
+        
+        with DatabaseService() as db_service:
+            watch_history = db_service.save_watch_progress(
+                media_type=media_type,
+                media_id=media_id,
+                progress_seconds=progress_seconds,
+                duration_seconds=duration_seconds,
+                title=title,
+                tmdb_id=tmdb_id,
+                season_number=season,
+                episode_number=episode,
+                poster_path=poster_path
+            )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Progress saved'
+        })
+    except Exception as e:
+        logger.error(f"Error saving watch progress: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/mark_watched', methods=['POST'])
+def api_mark_watched():
+    """Mark an item as watched or unmark it"""
+    try:
+        data = request.get_json()
+        action = data.get('action', 'mark')  # 'mark' or 'unmark'
+        media_type = data.get('type')
+        media_id = data.get('id')
+        tmdb_id = data.get('tmdb_id')
+        title = data.get('title', 'Unknown')
+        season = data.get('season')
+        episode = data.get('episode')
+        
+        if not all([media_type, media_id]):
+            return jsonify({
+                'success': False,
+                'error': 'Missing required fields'
+            }), 400
+        
+        with DatabaseService() as db_service:
+            if action == 'mark':
+                success = db_service.mark_as_watched(
+                    media_type=media_type,
+                    media_id=media_id,
+                    tmdb_id=tmdb_id,
+                    title=title,
+                    season=season,
+                    episode=episode
+                )
+                message = 'Marked as watched'
+            else:  # unmark
+                success = db_service.unmark_as_watched(
+                    media_type=media_type,
+                    media_id=media_id,
+                    season=season,
+                    episode=episode
+                )
+                message = 'Unmarked as watched'
+        
+        return jsonify({
+            'success': success,
+            'message': message,
+            'is_watched': action == 'mark'
+        })
+    except Exception as e:
+        logger.error(f"Error marking watched status: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/unmark_watched', methods=['POST'])
+def api_unmark_watched():
+    """Unmark an item as watched (dedicated endpoint)"""
+    try:
+        data = request.get_json()
+        media_type = data.get('type')
+        media_id = data.get('id') or data.get('imdb_id')
+        season = data.get('season')
+        episode = data.get('episode')
+        
+        if not all([media_type, media_id]):
+            return jsonify({
+                'success': False,
+                'error': 'Missing required fields'
+            }), 400
+        
+        with DatabaseService() as db_service:
+            success = db_service.unmark_as_watched(
+                media_type=media_type,
+                media_id=media_id,
+                season=season,
+                episode=episode
+            )
+        
+        return jsonify({
+            'success': success,
+            'message': 'Unmarked as watched',
+            'is_watched': False
+        })
+    except Exception as e:
+        logger.error(f"Error unmarking watched status: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/watched_status/<media_type>/<media_id>')
+def api_watched_status(media_type, media_id):
+    """Check if an item is marked as watched"""
+    try:
+        season = request.args.get('season', type=int)
+        episode = request.args.get('episode', type=int)
+        
+        with DatabaseService() as db_service:
+            is_watched = db_service.is_marked_watched(
+                media_type=media_type,
+                media_id=media_id,
+                season=season,
+                episode=episode
+            )
+        
+        return jsonify({
+            'success': True,
+            'is_watched': is_watched
+        })
+    except Exception as e:
+        logger.error(f"Error checking watched status for {media_type}/{media_id}: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'is_watched': False
+        }), 500
 
 
 if __name__ == "__main__":
