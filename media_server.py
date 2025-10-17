@@ -575,125 +575,17 @@ def watch_episode(imdb_id, season_number, episode_number):
         logger.error(f"Error in watch_episode: {e}")
         return f"Error: {e}", 500
 
-def search_tmdb_movies(query, page=1):
-    """Search movies using TMDB API"""
+@app.route('/css/<filename>')
+def serve_css(filename):
+    """Serve CSS files with caching headers"""
     try:
-        url = f"{api_config.TMDB_BASE_URL}/search/movie"
-        params = {'query': query, 'page': page}
-        data = get_cached_tmdb_data(url, str(params))
-        movies = data.get('results', [])[:15]  # Limit to 15
-        filtered_movies = []
-        for movie in movies:
-            movie['tmdb_id'] = movie['id']
-            # Get IMDB ID
-            imdb_id = get_imdb_id(movie['tmdb_id'], 'movie')
-            if imdb_id:  # Only include movies with IMDB IDs
-                movie['imdb_id'] = imdb_id
-                # Build poster URL directly
-                movie['poster_url'] = f"/poster/movie/{movie['tmdb_id']}"
-                movie['backdrop_url'] = f"/backdrop/movie/{movie['tmdb_id']}" if movie.get('backdrop_path') else None
-                movie['quality'] = 'HD'  # Default
-                # Cache the poster path if available
-                if movie.get('poster_path'):
-                    cache_manager.set('posters', f"movie_{movie['tmdb_id']}", movie['poster_path'])
-                if movie.get('backdrop_path'):
-                    cache_manager.set('backdrops', f"movie_{movie['tmdb_id']}", movie['backdrop_path'])
-                filtered_movies.append(movie)
-        return filtered_movies
+        response = send_from_directory(server_config.CSS_FOLDER, filename)
+        # Add caching headers for better performance
+        response.headers['Cache-Control'] = 'public, max-age=3600'
+        return response
     except Exception as e:
-        logger.error(f" searching TMDB movies: {e}")
-        return []
-
-def search_tmdb_series(query, page=1):
-    """Search TV series using TMDB API"""
-    try:
-        url = f"{api_config.TMDB_BASE_URL}/search/tv"
-        params = {'query': query, 'page': page}
-        data = get_cached_tmdb_data(url, str(params))
-        series = data.get('results', [])[:15]  # Limit to 15
-        filtered_series = []
-        for show in series:
-            show['tmdb_id'] = show['id']
-            # Get IMDB ID
-            imdb_id = get_imdb_id(show['tmdb_id'], 'tv')
-            if imdb_id:  # Only include series with IMDB IDs
-                show['imdb_id'] = imdb_id
-                # Build poster URL directly
-                show['poster_url'] = f"/poster/tv/{show['tmdb_id']}"
-                show['backdrop_url'] = f"/backdrop/tv/{show['tmdb_id']}" if show.get('backdrop_path') else None
-                # Cache the poster path if available
-                if show.get('poster_path'):
-                    cache_manager.set('posters', f"tv_{show['tmdb_id']}", show['poster_path'])
-                if show.get('backdrop_path'):
-                    cache_manager.set('backdrops', f"tv_{show['tmdb_id']}", show['backdrop_path'])
-                filtered_series.append(show)
-        return filtered_series
-    except Exception as e:
-        logger.error(f" searching TMDB series: {e}")
-        return []
-
-@lru_cache(maxsize=500)
-def get_imdb_id(tmdb_id: int, media_type: str) -> Optional[str]:
-    """
-    Get IMDB ID from TMDB ID with caching
-    
-    Args:
-        tmdb_id: TMDB ID
-        media_type: 'movie' or 'tv'
-        
-    Returns:
-        IMDB ID or None if not found
-    """
-    try:
-        url = f"{api_config.TMDB_BASE_URL}/{media_type}/{tmdb_id}/external_ids"
-        data = get_cached_tmdb_data(url, "")
-        return data.get('imdb_id')
-    except Exception as e:
-        logger.error(f"Error getting IMDB ID for {tmdb_id}: {e}")
-        return None
-
-def get_poster_url(tmdb_id, media_type='movie'):
-    """Get poster URL - checks database first, then fetches from API if needed"""
-    if not tmdb_id:
-        return None
-    
-    key = f"{media_type}_{tmdb_id}"
-    
-    # Check if already in cache
-    cached_path = cache_manager.get('posters', key, cache_config.POSTER)
-    if cached_path:
-        return f"/poster/{media_type}/{tmdb_id}"
-    
-    # Try to get from database
-    try:
-        with DatabaseService() as db_service:
-            if media_type == 'movie':
-                item = db_service.get_movie_by_tmdb_id(tmdb_id)
-            else:
-                item = db_service.get_tvshow_by_tmdb_id(tmdb_id)
-            
-            if item and item.poster_path:
-                cache_manager.set('posters', key, item.poster_path)
-                return f"/poster/{media_type}/{tmdb_id}"
-    except Exception as e:
-        logger.error(f" getting poster from DB for {tmdb_id}: {e}")
-    
-    # Fallback to API if not in database
-    if not api_config.TMDB_ACCESS_TOKEN:
-        return f"/poster/{media_type}/{tmdb_id}"
-    
-    try:
-        url = f"{api_config.TMDB_BASE_URL}/{media_type}/{tmdb_id}/images"
-        data = get_cached_tmdb_data(url, "")
-        posters = data.get('posters', [])
-        if posters:
-            posters.sort(key=lambda x: x.get('vote_average', 0), reverse=True)
-            cache_manager.set('posters', key, posters[0]['file_path'])
-            return f"/poster/{media_type}/{tmdb_id}"
-    except Exception as e:
-        logger.error(f" getting poster from API for {tmdb_id}: {e}")
-    
-    return None
+        logger.error(f"Error serving CSS {filename}: {e}")
+        abort(404)
 
 @app.route('/poster/<media_type>/<int:tmdb_id>')
 def get_poster(media_type, tmdb_id):
@@ -738,49 +630,6 @@ def get_poster(media_type, tmdb_id):
     except Exception as e:
         logger.error(f"Error proxying poster: {e}")
         abort(404)
-
-def get_backdrop_url(tmdb_id, media_type='movie'):
-    """Get backdrop URL - checks database first, then fetches from API if needed"""
-    if not tmdb_id:
-        return None
-    
-    key = f"{media_type}_{tmdb_id}"
-    
-    # Check if already in cache
-    cached_path = cache_manager.get('backdrops', key, cache_config.BACKDROP)
-    if cached_path:
-        return f"/backdrop/{media_type}/{tmdb_id}"
-    
-    # Try to get from database
-    try:
-        with DatabaseService() as db_service:
-            if media_type == 'movie':
-                item = db_service.get_movie_by_tmdb_id(tmdb_id)
-            else:
-                item = db_service.get_tvshow_by_tmdb_id(tmdb_id)
-            
-            if item and item.backdrop_path:
-                cache_manager.set('backdrops', key, item.backdrop_path)
-                return f"/backdrop/{media_type}/{tmdb_id}"
-    except Exception as e:
-        logger.error(f" getting backdrop from DB for {tmdb_id}: {e}")
-    
-    # Fallback to API if not in database
-    if not api_config.TMDB_ACCESS_TOKEN:
-        return None
-    
-    try:
-        url = f"{api_config.TMDB_BASE_URL}/{media_type}/{tmdb_id}/images"
-        data = get_cached_tmdb_data(url, "")
-        backdrops = data.get('backdrops', [])
-        if backdrops:
-            backdrops.sort(key=lambda x: x.get('vote_average', 0), reverse=True)
-            cache_manager.set('backdrops', key, backdrops[0]['file_path'])
-            return f"/backdrop/{media_type}/{tmdb_id}"
-    except Exception as e:
-        logger.error(f" getting backdrop from API for {tmdb_id}: {e}")
-    
-    return None
 
 @app.route('/backdrop/<media_type>/<int:tmdb_id>')
 def get_backdrop(media_type, tmdb_id):
@@ -871,523 +720,102 @@ def get_backdrop(media_type, tmdb_id):
         </svg>'''
         return Response(svg, mimetype='image/svg+xml')
 
-@app.route('/css/<filename>')
-def serve_css(filename):
-    """Serve CSS files with caching headers"""
+def search_tmdb_movies(query, page=1):
+    """Search movies using TMDB API"""
     try:
-        response = send_from_directory(server_config.CSS_FOLDER, filename)
-        # Add caching headers for better performance
-        response.headers['Cache-Control'] = 'public, max-age=3600'
-        return response
+        url = f"{api_config.TMDB_BASE_URL}/search/movie"
+        params = {'query': query, 'page': page}
+        data = get_cached_tmdb_data(url, str(params))
+        movies = data.get('results', [])[:15]  # Limit to 15
+        filtered_movies = []
+        for movie in movies:
+            movie['tmdb_id'] = movie['id']
+            # Get IMDB ID
+            imdb_id = get_imdb_id(movie['tmdb_id'], 'movie')
+            if imdb_id:  # Only include movies with IMDB IDs
+                movie['imdb_id'] = imdb_id
+                # Build poster URL directly
+                movie['poster_url'] = f"/poster/movie/{movie['tmdb_id']}"
+                movie['backdrop_url'] = f"/backdrop/movie/{movie['tmdb_id']}" if movie.get('backdrop_path') else None
+                movie['quality'] = 'HD'  # Default
+                # Cache the poster path if available
+                if movie.get('poster_path'):
+                    cache_manager.set('posters', f"movie_{movie['tmdb_id']}", movie['poster_path'])
+                if movie.get('backdrop_path'):
+                    cache_manager.set('backdrops', f"movie_{movie['tmdb_id']}", movie['backdrop_path'])
+                filtered_movies.append(movie)
+        return filtered_movies
     except Exception as e:
-        logger.error(f"Error serving CSS {filename}: {e}")
-        abort(404)
+        logger.error(f" searching TMDB movies: {e}")
+        return []
 
-@app.route('/search')
-@measure_time
-def search():
-    """Search for movies and series with smart caching"""
-    query = request.args.get('q', '').strip()
-    if not query:
-        return redirect('/')
+def search_tmdb_series(query, page=1):
+    """Search TV series using TMDB API"""
+    try:
+        url = f"{api_config.TMDB_BASE_URL}/search/tv"
+        params = {'query': query, 'page': page}
+        data = get_cached_tmdb_data(url, str(params))
+        series = data.get('results', [])[:15]  # Limit to 15
+        filtered_series = []
+        for show in series:
+            show['tmdb_id'] = show['id']
+            # Get IMDB ID
+            imdb_id = get_imdb_id(show['tmdb_id'], 'tv')
+            if imdb_id:  # Only include series with IMDB IDs
+                show['imdb_id'] = imdb_id
+                # Build poster URL directly
+                show['poster_url'] = f"/poster/tv/{show['tmdb_id']}"
+                show['backdrop_url'] = f"/backdrop/tv/{show['tmdb_id']}" if show.get('backdrop_path') else None
+                # Cache the poster path if available
+                if show.get('poster_path'):
+                    cache_manager.set('posters', f"tv_{show['tmdb_id']}", show['poster_path'])
+                if show.get('backdrop_path'):
+                    cache_manager.set('backdrops', f"tv_{show['tmdb_id']}", show['backdrop_path'])
+                filtered_series.append(show)
+        return filtered_series
+    except Exception as e:
+        logger.error(f" searching TMDB series: {e}")
+        return []
+
+@lru_cache(maxsize=500)
+def get_imdb_id(tmdb_id: int, media_type: str) -> Optional[str]:
+    """
+    Get IMDB ID from TMDB ID with caching
     
+    Args:
+        tmdb_id: TMDB ID
+        media_type: 'movie' or 'tv'
+        
+    Returns:
+        IMDB ID or None if not found
+    """
     try:
-        # Try database first for fast search
-        with DatabaseService() as db_service:
-            movies = db_service.search_movies(query, per_page=pagination_config.SEARCH_PER_PAGE)
-            series = db_service.search_tvshows(query, per_page=pagination_config.SEARCH_PER_PAGE)
-        
-        # Populate image cache
-        _populate_image_cache(movies, 'movie')
-        _populate_image_cache(series, 'tv')
-        
-        # Get backdrop URLs from search results
-        backdrop_urls = []
-        for movie in movies[:5]:
-            backdrop_url = movie.get('backdrop_url')
-            if backdrop_url:
-                backdrop_urls.append(backdrop_url)
-        for show in series[:5]:
-            backdrop_url = show.get('backdrop_url')
-            if backdrop_url:
-                backdrop_urls.append(backdrop_url)
-        
-        return render_template('index.html', 
-                             movies=movies, 
-                             series=series, 
-                             movie_page=1, 
-                             series_page=1, 
-                             backdrop_urls=backdrop_urls, 
-                             search_query=query,
-                             trending_movies=[],
-                             trending_series=[],
-                             continue_watching=[],
-                             my_list=[])
+        url = f"{api_config.TMDB_BASE_URL}/{media_type}/{tmdb_id}/external_ids"
+        data = get_cached_tmdb_data(url, "")
+        return data.get('imdb_id')
     except Exception as e:
-        logger.error(f"Error in search: {e}")
-        return f"Error searching: {e}", 500
+        logger.error(f"Error getting IMDB ID for {tmdb_id}: {e}")
+        return None
 
-@app.route('/search_more_movies/<query>/<int:page>')
-def search_more_movies(query, page):
-    """Load more search results for movies"""
+@lru_cache(maxsize=500)
+def get_imdb_id(tmdb_id: int, media_type: str) -> Optional[str]:
+    """
+    Get IMDB ID from TMDB ID with caching
+    
+    Args:
+        tmdb_id: TMDB ID
+        media_type: 'movie' or 'tv'
+        
+    Returns:
+        IMDB ID or None if not found
+    """
     try:
-        movies = search_tmdb_movies(query, page)
-        return {'movies': movies}
+        url = f"{api_config.TMDB_BASE_URL}/{media_type}/{tmdb_id}/external_ids"
+        data = get_cached_tmdb_data(url, "")
+        return data.get('imdb_id')
     except Exception as e:
-        return {'error': str(e)}, 500
-
-@app.route('/search_more_series/<query>/<int:page>')
-def search_more_series(query, page):
-    """Load more search results for series"""
-    try:
-        series = search_tmdb_series(query, page)
-        return {'series': series}
-    except Exception as e:
-        return {'error': str(e)}, 500
-
-@app.route('/api/my-list', methods=['POST'])
-def add_to_my_list():
-    """Add or remove item from My List"""
-    try:
-        data = request.get_json()
-        action = data.get('action', 'add')  # 'add' or 'remove'
-        imdb_id = data.get('imdb_id') or data.get('id')  # support both
-        media_type = data.get('type')  # 'movie' or 'tv'
-        tmdb_id = data.get('tmdb_id')
-        title = data.get('title')
-        
-        if not imdb_id or not media_type:
-            return jsonify({'error': 'Missing id or type'}), 400
-        
-        with DatabaseService() as db_service:
-            if media_type == 'movie':
-                movie = db_service.get_movie_by_imdb_id(imdb_id)
-                if movie:
-                    if action == 'add':
-                        db_service.add_to_my_list('movie', movie.imdb_id, movie.tmdb_id, movie.title)
-                        logger.info(f"Added movie {imdb_id} to My List")
-                    else:
-                        db_service.remove_from_my_list('movie', movie.imdb_id)
-                        logger.info(f"Removed movie {imdb_id} from My List")
-                    return jsonify({'success': True})
-            else:
-                series = db_service.get_tvshow_by_imdb_id(imdb_id)
-                if series:
-                    if action == 'add':
-                        db_service.add_to_my_list('series', series.imdb_id, series.tmdb_id, series.title)
-                        logger.info(f"Added series {imdb_id} to My List")
-                    else:
-                        db_service.remove_from_my_list('series', series.imdb_id)
-                        logger.info(f"Removed series {imdb_id} from My List")
-                    return jsonify({'success': True})
-        
-        return jsonify({'error': 'Item not found'}), 404
-    except Exception as e:
-        logger.error(f"Error in api_my_list: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/my-list', methods=['GET'])
-def get_my_list_api():
-    """API endpoint to get My List items"""
-    try:
-        with DatabaseService() as db_service:
-            my_list = db_service.get_my_list()
-            logger.info(f"Fetching My List: {len(my_list)} items")
-            return jsonify({'success': True, 'items': my_list})
-    except Exception as e:
-        logger.error(f"Error in get_my_list_api: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/watch_progress', methods=['POST'])
-def save_watch_progress():
-    """Save watch progress for continue watching feature"""
-    try:
-        data = request.get_json()
-        media_type = data.get('type', 'movie')  # 'movie' or 'series'
-        media_id = data.get('id') or data.get('imdb_id')
-        tmdb_id = data.get('tmdb_id')
-        title = data.get('title', 'Unknown')
-        progress_seconds = int(data.get('progress', 0))
-        duration_seconds = int(data.get('duration', 0))
-        season_number = data.get('season')
-        episode_number = data.get('episode')
-        poster_path = data.get('poster_path')
-        
-        if not media_id or duration_seconds == 0:
-            return jsonify({'error': 'Missing required fields'}), 400
-        
-        # Save to database
-        with DatabaseService() as db_service:
-            watch_record = db_service.save_watch_progress(
-                media_type=media_type,
-                media_id=media_id,
-                tmdb_id=tmdb_id,
-                title=title,
-                progress_seconds=progress_seconds,
-                duration_seconds=duration_seconds,
-                season_number=season_number,
-                episode_number=episode_number,
-                poster_path=poster_path
-            )
-            
-            logger.info(f"Watch progress saved: {title} - {watch_record.progress_percent:.1f}%")
-            
-            return jsonify({
-                'success': True,
-                'progress_percent': round(watch_record.progress_percent, 2),
-                'is_completed': watch_record.is_completed
-            })
-        
-    except Exception as e:
-        logger.error(f"Error saving watch progress: {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/continue_watching', methods=['GET'])
-def get_continue_watching_api():
-    """Get continue watching list"""
-    try:
-        limit = int(request.args.get('limit', 20))
-        
-        with DatabaseService() as db_service:
-            continue_watching = db_service.get_continue_watching(limit=limit)
-            
-            return jsonify({
-                'success': True,
-                'items': continue_watching
-            })
-        
-    except Exception as e:
-        logger.error(f"Error getting continue watching: {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/watch_progress/<media_type>/<media_id>', methods=['GET'])
-def get_watch_progress_api(media_type, media_id):
-    """Get watch progress for specific content"""
-    try:
-        season = request.args.get('season', type=int)
-        episode = request.args.get('episode', type=int)
-        
-        with DatabaseService() as db_service:
-            watch_record = db_service.get_watch_progress(
-                media_type=media_type,
-                media_id=media_id,
-                season=season,
-                episode=episode
-            )
-            
-            if watch_record:
-                return jsonify({
-                    'success': True,
-                    'progress': watch_record
-                })
-            else:
-                return jsonify({
-                    'success': True,
-                    'progress': None
-                })
-        
-    except Exception as e:
-        logger.error(f"Error getting watch progress: {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/mark_season_watched', methods=['POST'])
-def mark_season_as_watched_api():
-    """Mark entire season as watched"""
-    try:
-        data = request.get_json()
-        media_id = data.get('id') or data.get('imdb_id')
-        tmdb_id = data.get('tmdb_id')
-        series_title = data.get('title', 'Unknown')
-        season_number = data.get('season_number')
-        episode_count = data.get('episode_count')
-        
-        if not media_id or not season_number or not episode_count:
-            return jsonify({'error': 'Missing required fields'}), 400
-        
-        with DatabaseService() as db_service:
-            success = db_service.mark_season_as_watched(
-                media_id=media_id,
-                tmdb_id=tmdb_id,
-                series_title=series_title,
-                season_number=season_number,
-                episode_count=episode_count
-            )
-            
-            if success:
-                logger.info(f"Marked season {season_number} as watched: {series_title}")
-            
-            return jsonify({'success': success})
-        
-    except Exception as e:
-        logger.error(f"Error marking season as watched: {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/unmark_season_watched', methods=['POST'])
-def unmark_season_as_watched_api():
-    """Remove watched marks from entire season"""
-    try:
-        data = request.get_json()
-        media_id = data.get('id') or data.get('imdb_id')
-        season_number = data.get('season_number')
-        
-        if not media_id or not season_number:
-            return jsonify({'error': 'Missing required fields'}), 400
-        
-        with DatabaseService() as db_service:
-            success = db_service.unmark_season_as_watched(
-                media_id=media_id,
-                season_number=season_number
-            )
-            
-            return jsonify({'success': success})
-        
-    except Exception as e:
-        logger.error(f"Error unmarking season as watched: {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/mark_series_watched', methods=['POST'])
-def mark_series_as_watched_api():
-    """Mark entire series as watched"""
-    try:
-        data = request.get_json()
-        media_id = data.get('id') or data.get('imdb_id')
-        tmdb_id = data.get('tmdb_id')
-        series_title = data.get('title', 'Unknown')
-        seasons_data = data.get('seasons', [])
-        
-        if not media_id or not seasons_data:
-            return jsonify({'error': 'Missing required fields'}), 400
-        
-        with DatabaseService() as db_service:
-            success = db_service.mark_series_as_watched(
-                media_id=media_id,
-                tmdb_id=tmdb_id,
-                series_title=series_title,
-                seasons_data=seasons_data
-            )
-            
-            if success:
-                logger.info(f"Marked entire series as watched: {series_title}")
-            
-            return jsonify({'success': success})
-        
-    except Exception as e:
-        logger.error(f"Error marking series as watched: {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/unmark_series_watched', methods=['POST'])
-def unmark_series_as_watched_api():
-    """Remove watched marks from entire series"""
-    try:
-        data = request.get_json()
-        media_id = data.get('id') or data.get('imdb_id')
-        
-        if not media_id:
-            return jsonify({'error': 'Missing required fields'}), 400
-        
-        with DatabaseService() as db_service:
-            success = db_service.unmark_series_as_watched(media_id=media_id)
-            
-            return jsonify({'success': success})
-        
-    except Exception as e:
-        logger.error(f"Error unmarking series as watched: {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/season_watch_status/<media_id>/<int:season_number>', methods=['GET'])
-def get_season_watch_status_api(media_id, season_number):
-    """Get watched status for a season"""
-    try:
-        with DatabaseService() as db_service:
-            status = db_service.get_season_watch_status(media_id, season_number)
-            return jsonify(status)
-    except Exception as e:
-        logger.error(f"Error getting season watch status: {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/series_watch_status/<media_id>', methods=['GET'])
-def get_series_watch_status_api(media_id):
-    """Get watched status for entire series"""
-    try:
-        with DatabaseService() as db_service:
-            status = db_service.get_series_watch_status(media_id)
-            return jsonify(status)
-    except Exception as e:
-        logger.error(f"Error getting series watch status: {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/mark_watched', methods=['POST'])
-def mark_as_watched_api():
-    """Mark content as watched manually"""
-    try:
-        data = request.get_json()
-        media_type = data.get('type')
-        media_id = data.get('id') or data.get('imdb_id')
-        tmdb_id = data.get('tmdb_id')
-        title = data.get('title', 'Unknown')
-        season = data.get('season')
-        episode = data.get('episode')
-        
-        if not media_type or not media_id:
-            return jsonify({'error': 'Missing required fields'}), 400
-        
-        with DatabaseService() as db_service:
-            success = db_service.mark_as_watched(
-                media_type=media_type,
-                media_id=media_id,
-                tmdb_id=tmdb_id,
-                title=title,
-                season=season,
-                episode=episode
-            )
-            
-            if success:
-                logger.info(f"Marked as watched: {title} ({media_type})")
-            
-            return jsonify({'success': success, 'is_watched': True})
-        
-    except Exception as e:
-        logger.error(f"Error marking as watched: {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/unmark_watched', methods=['POST'])
-def unmark_as_watched_api():
-    """Remove watched mark from content"""
-    try:
-        data = request.get_json()
-        media_type = data.get('type')
-        media_id = data.get('id') or data.get('imdb_id')
-        season = data.get('season')
-        episode = data.get('episode')
-        title = data.get('title', 'Unknown')
-        
-        if not media_type or not media_id:
-            return jsonify({'error': 'Missing required fields'}), 400
-        
-        with DatabaseService() as db_service:
-            success = db_service.unmark_as_watched(
-                media_type=media_type,
-                media_id=media_id,
-                season=season,
-                episode=episode
-            )
-            
-            if success:
-                logger.info(f"Unmarked as watched: {title} ({media_type})")
-            
-            return jsonify({'success': success, 'is_watched': False})
-        
-    except Exception as e:
-        logger.error(f"Error unmarking as watched: {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/watched_status/<media_type>/<media_id>', methods=['GET'])
-def get_watched_status_api(media_type, media_id):
-    """Check if content is marked as watched"""
-    try:
-        season = request.args.get('season', type=int)
-        episode = request.args.get('episode', type=int)
-        
-        with DatabaseService() as db_service:
-            is_watched = db_service.is_marked_watched(
-                media_type=media_type,
-                media_id=media_id,
-                season=season,
-                episode=episode
-            )
-            
-            return jsonify({'success': True, 'is_watched': is_watched})
-        
-    except Exception as e:
-        logger.error(f"Error getting watched status: {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/watched_items', methods=['GET'])
-def get_watched_items_api():
-    """Get all items marked as watched"""
-    try:
-        media_type = request.args.get('type')  # Optional filter
-        limit = int(request.args.get('limit', 100))
-        
-        with DatabaseService() as db_service:
-            watched_items = db_service.get_watched_items(
-                media_type=media_type,
-                limit=limit
-            )
-            
-            return jsonify({
-                'success': True,
-                'items': watched_items,
-                'count': len(watched_items)
-            })
-        
-    except Exception as e:
-        logger.error(f"Error getting watched items: {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/watch_history', methods=['GET'])
-def get_watch_history_api():
-    """Get full watch history"""
-    try:
-        limit = int(request.args.get('limit', 50))
-        include_completed = request.args.get('include_completed', 'true').lower() == 'true'
-        
-        with DatabaseService() as db_service:
-            history = db_service.get_watch_history(
-                limit=limit,
-                include_completed=include_completed
-            )
-            
-            return jsonify({
-                'success': True,
-                'items': history
-            })
-        
-    except Exception as e:
-        logger.error(f"Error getting watch history: {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/watch_history/<media_type>/<media_id>', methods=['DELETE'])
-def remove_from_watch_history_api(media_type, media_id):
-    """Remove item from watch history"""
-    try:
-        season = request.args.get('season', type=int)
-        episode = request.args.get('episode', type=int)
-        
-        with DatabaseService() as db_service:
-            success = db_service.remove_from_watch_history(
-                media_type=media_type,
-                media_id=media_id,
-                season_number=season,
-                episode_number=episode
-            )
-            
-            return jsonify({'success': success})
-        
-    except Exception as e:
-        logger.error(f"Error removing from watch history: {e}")
-        return jsonify({'error': str(e)}), 500
-
-
-# Backward compatibility - redirect old endpoint to new one
-@app.route('/api/continue_watching', methods=['POST'])
-def save_continue_watching():
-    """Backward compatibility - redirect to new endpoint"""
-    return save_watch_progress()
+        logger.error(f"Error getting IMDB ID for {tmdb_id}: {e}")
+        return None
 
 @lru_cache(maxsize=200)
 def get_movie_details(imdb_id: str) -> Optional[Dict[str, Any]]:
@@ -1439,27 +867,6 @@ def get_series_details(imdb_id: str) -> Optional[Dict[str, Any]]:
     except Exception as e:
         logger.error(f"Error getting series details for {imdb_id}: {e}")
         return None
-
-def get_network_ip():
-    """Get the network IP address of the machine"""
-    try:
-        # Try to get IP from external service
-        response = requests.get('https://api.ipify.org', timeout=5)
-        if response.status_code == 200:
-            return response.text.strip()
-    except:
-        pass
-    
-    try:
-        # Fallback: get local IP
-        import socket
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
-        ip = s.getsockname()[0]
-        s.close()
-        return ip
-    except:
-        return "127.0.0.1"  # Fallback
 
 @app.route('/api/next_episode/<imdb_id>/<int:season>/<int:episode>')
 def get_next_episode(imdb_id, season, episode):
